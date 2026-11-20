@@ -1,0 +1,94 @@
+/* Адаптировано из Bencho SlideConfirm (MIT). */
+
+.ss {
+  width: 100%;
+  font-family: var(--font-ui);
+}
+
+.ss-track {
+  position: relative;
+  width: 100%;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--accent-softer);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ss-wash {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+.ss-say {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 34px;
+  font-size: 13px;
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  color: var(--accent-strong);
+  text-align: center;
+  pointer-events: none;
+}
+
+.ss-grip {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  cursor: grab;
+  overflow: hidden;
+  z-index: 2;
+  box-shadow: 0 6px 16px -8px rgba(28, 51, 216, 0.65);
+}
+
+.ss-track[data-held="true"] .ss-grip {
+  cursor: grabbing;
+}
+
+.ss-grip:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.ss-grip:focus-visible { outline-offset: -4px; }
+
+.ss-arrow {
+  display: grid;
+  place-items: center;
+}
+
+.ss-done {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 16px;
+  font-size: 12.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.ss[data-disabled="true"] {
+  opacity: 0.55;
+  pointer-events: none;
+}

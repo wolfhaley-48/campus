@@ -1,0 +1,59 @@
+:root {
+  color-scheme: light;
+
+  --font-ui: "Inter Variable", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Unbounded", "Inter Variable", sans-serif;
+
+  --bg: #f2f0ea;
+  --board: #fbfaf7;
+  --card: #ffffff;
+
+  --surface: #f6f4ee;
+  --surface-2: #edeae2;
+  --surface-3: #e2ded3;
+
+  --ink: #17181a;
+  --ink-rgb: 23, 24, 26;
+  --ink-2: #3c3d41;
+  --ink-3: #62646a;
+  --ink-4: #86888e;
+  --ink-5: #b0b2b8;
+
+  --on-ink: #ffffff;
+  --fill-slab: #ffffff;
+  --fill-on: #17181a;
+  --pane-edge: rgba(23, 24, 26, 0.085);
+
+  --signal: #2f4bff;
+  --focus: #2f4bff;
+  --ok: #0f7a48;
+  --ember: #c2410c;
+
+  --accent: #2f4bff;
+  --accent-strong: #1c33d8;
+  --accent-soft: #e8ebff;
+  --accent-softer: #f2f4ff;
+  --lime: #d8f36b;
+  --lime-deep: #b8da3c;
+  --lime-ink: #37420a;
+  --coral: #f05a3c;
+  --coral-soft: #ffe9e3;
+  --amber: #b97400;
+  --amber-soft: #fff0cf;
+  --green: #0f7a48;
+  --green-soft: #dff5e7;
+  --blue-soft: #e8f0ff;
+  --danger: #c9351f;
+  --danger-soft: #ffe8e3;
+
+  --radius-xl: 30px;
+  --radius-lg: 24px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+
+  --shadow-sm: 0 1px 2px rgba(23, 24, 26, 0.04), 0 10px 28px -22px rgba(23, 24, 26, 0.22);
+  --shadow-md: 0 20px 50px -30px rgba(23, 24, 26, 0.32);
+  --shadow-lg: 0 40px 100px -48px rgba(23, 24, 26, 0.42);
+
+  --sidebar-width: 264px;
+}

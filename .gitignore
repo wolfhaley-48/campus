@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Node
+node_modules/
+frontend/dist/
+.vite/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+frontend/.playwright/
+frontend/test-results/
+frontend/playwright-report/
