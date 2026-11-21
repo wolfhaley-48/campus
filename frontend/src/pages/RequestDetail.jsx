@@ -151,7 +151,9 @@ export default function RequestDetail() {
             <b>Документ готов</b>
             <span>{request.resultNote || "Заберите оригинал в деканате, ауд. 115."}</span>
           </div>
-          <span className="pill pill-success">Готово</span>
+          {request.delivery === "electronic" ? (
+            <a className="btn btn-primary btn-sm" href={`/api/requests/${request.id}/document`} download>Скачать справку</a>
+          ) : <span className="pill pill-success">Готово</span>}
         </div>
       )}
 

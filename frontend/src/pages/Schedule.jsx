@@ -176,8 +176,8 @@ export default function Schedule() {
       <motion.div className="day-selector-slot" initial={false} animate={{ height: view === "day" ? "auto" : 0, opacity: view === "day" ? 1 : 0 }} transition={reduced ? { duration: 0 } : CONTENT_TRANSITION} aria-hidden={view !== "day"} inert={view !== "day" ? true : undefined}>
         <div className="day-selector-body"><ChoiceGroup label="День недели" className="mobile-day-picker panel-day-picker" buttonClassName="day-chip" value={activeDay.weekday}
           onChange={(next) => { setDirection(Math.sign(next - activeDay.weekday)); setWeekday(next); }}
-          options={data.days.map((day) => ({ key: day.weekday, label: WEEKDAYS_SHORT[day.weekday - 1], date: day.date, today: day.isToday, changed: day.lessons.some((lesson) => lesson.change), ariaLabel: `${WEEKDAYS[day.weekday - 1]}, ${formatDayMonth(day.date)}${day.isToday ? ", сегодня" : ""}` }))}
-          renderOption={(day) => <><span>{day.label}</span><b>{Number(day.date.slice(8, 10))}</b>{day.changed && <i className="day-chip-dot" />}</>}
+          options={data.days.map((day) => ({ key: day.weekday, label: WEEKDAYS_SHORT[day.weekday - 1], date: day.date, today: day.isToday, changed: day.lessons.some((lesson) => lesson.change), ariaLabel: `${WEEKDAYS[day.weekday - 1]}, ${formatDayMonth(day.date)}${day.isToday ? ", сегодня" : ""}${day.lessons.some((lesson) => lesson.change) ? ", есть изменения" : ""}` }))}
+          renderOption={(day) => <><span>{day.label}</span><b>{Number(day.date.slice(8, 10))}</b>{day.changed && <i className="day-chip-dot" aria-hidden="true" />}</>}
         /></div>
       </motion.div>
 

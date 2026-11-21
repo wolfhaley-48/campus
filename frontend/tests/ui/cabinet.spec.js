@@ -40,7 +40,7 @@ test("login: demo selection, password visibility, error and sign-in", async ({ p
   if (data.unread > 0) await expect(page.locator(".header-badge")).toHaveText(data.unread > 9 ? "9+" : String(data.unread));
 });
 
-test("single-row header, local assets and SPA navigation on every screen", async ({ page }) => {
+test("responsive navigation, local assets and SPA navigation on every screen", async ({ page }) => {
   // Chromium may return a Promise here. Returning it from a React effect
   // used to crash the entire cabinet on the very first tab change.
   await page.addInitScript(() => {
@@ -64,7 +64,15 @@ test("single-row header, local assets and SPA navigation on every screen", async
   const positions = await page.locator(".header-brand, .header-tabs, .header-profile").evaluateAll(
     (nodes) => nodes.map((node) => { const rect = node.getBoundingClientRect(); return rect.y + rect.height / 2; }),
   );
-  expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(1);
+  if (page.viewportSize().width > 720) {
+    expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(1);
+  } else {
+    const links = await nav.locator("a").evaluateAll(nodes => nodes.map(node => {
+      const r = node.getBoundingClientRect();
+      return r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight;
+    }));
+    expect(links).toEqual([true, true, true, true, true]);
+  }
   const blur = await page.locator(".header-veil i").evaluateAll((nodes) => nodes.map(
     (node) => getComputedStyle(node).backdropFilter,
   ));

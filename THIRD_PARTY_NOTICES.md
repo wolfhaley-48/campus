@@ -52,3 +52,8 @@ Solar Icons (480 Design) — CC BY 4.0, https://icon-sets.iconify.design/solar/ 
 ## JavaScript-зависимости
 
 React, React DOM, React Router, Framer Motion, Iconify, Vite — лицензии указаны в `frontend/package-lock.json` и в пакетах `node_modules`.
+
+## PDF
+
+ReportLab — BSD, Pillow — HPND (лицензии поставляются с Python-пакетами).
+Шрифт Noto Sans — SIL Open Font License 1.1; копия лицензии: `backend/fonts/LICENSE`.

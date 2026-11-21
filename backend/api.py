@@ -2,8 +2,9 @@ from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from flask import Blueprint, current_app, g, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request, send_file
 from pymongo import ReturnDocument
+from werkzeug.exceptions import BadRequest
 
 from auth import (
     clear_session_cookie,
@@ -23,6 +24,7 @@ from constants import (
     STATUS_TIMELINE_LABELS,
 )
 from db import get_db
+from documents import request_pdf
 from serializers import serialize_request, serialize_user
 from services import (
     dashboard_payload,
@@ -41,7 +43,15 @@ DUMMY_HASH = hash_password("dummy-password-for-timing")
 
 
 def _json_body():
-    return request.get_json(silent=True) or {}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        raise BadRequest("Ожидается JSON-объект")
+    return data
+
+
+@bp.errorhandler(BadRequest)
+def invalid_body(error):
+    return jsonify(error="bad_request", message=error.description), 400
 
 
 @bp.get("/health")
@@ -226,6 +236,23 @@ def get_request(request_id):
     if not doc:
         return jsonify(error="not_found", message="Заявка не найдена"), 404
     return jsonify(request=serialize_request(doc))
+
+
+@bp.get("/requests/<request_id>/document")
+@login_required
+def download_request(request_id):
+    try:
+        oid = ObjectId(request_id)
+    except (InvalidId, TypeError):
+        return jsonify(error="not_found"), 404
+    doc = get_db().requests.find_one({
+        "_id": oid, "user_id": g.user["_id"],
+        "status": "ready", "delivery": "electronic",
+    })
+    if not doc:
+        return jsonify(error="not_found", message="Документ недоступен"), 404
+    return send_file(request_pdf(doc, g.user), mimetype="application/pdf",
+                     as_attachment=True, download_name=f"campus-{doc['_id']}.pdf")
 
 
 @bp.get("/notifications")
