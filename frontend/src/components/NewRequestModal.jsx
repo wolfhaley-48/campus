@@ -9,8 +9,8 @@ import { ContentSwap } from "./Motion";
 import { SHEET_SPRING, shouldCloseSheet } from "../motion";
 import { useToast } from "../toast";
 
-function RequestDialog({ onClose, types, delivery, onCreated }) {
-  const [type, setType] = useState(types?.[0]?.key || "");
+function RequestDialog({ onClose, types, delivery, onCreated, initialType }) {
+  const [type, setType] = useState(types?.some(item => item.key === initialType) ? initialType : types?.[0]?.key || "");
   const [mode, setMode] = useState("electronic");
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
@@ -170,6 +170,7 @@ function RequestDialog({ onClose, types, delivery, onCreated }) {
 
       <footer className="modal-foot">
         <SlideToSubmit resetKey={`${type}-${mode}`} onConfirm={submit} label="Сдвиньте, чтобы отправить" doneLabel="Заявка создана" disabled={!type} />
+        <button type="button" className="request-send-button" disabled={sending || !type} onClick={() => { submit().catch(() => {}); }}>{sending ? "Отправляем…" : "Отправить кнопкой"}</button>
         <p className="modal-disclaimer">В демо статус заявки не меняется автоматически.</p>
       </footer>
     </motion.div>

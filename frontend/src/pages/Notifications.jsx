@@ -1,3 +1,4 @@
+import { Link } from "../navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { BellOff, CheckCheck, Inbox } from "../icons";
@@ -190,10 +191,11 @@ export default function Notifications() {
                 {group.items.map((item) => {
                   const due = item.dueDate ? daysUntil(item.dueDate) : null;
                   return (
+                    <article key={item.id} className="notification-entry">
                     <button
-                      key={item.id}
                       type="button"
                       className="notification-card"
+                      data-overdue={due !== null && due < 0 || undefined}
                       data-unread={!item.isRead ? "true" : undefined}
                       onClick={() => markRead(item)}
                     >
@@ -210,7 +212,7 @@ export default function Notifications() {
                         <span className="notification-body">{item.body}</span>
                         {item.dueDate && (
                           <span className="notification-due">
-                            до {formatDayMonth(item.dueDate)}
+                            {due < 0 ? "Срок истёк " : "до "}{formatDayMonth(item.dueDate)}
                             {due !== null && due >= 0 && (
                               <em>
                                 {due === 0
@@ -222,6 +224,8 @@ export default function Notifications() {
                         )}
                       </span>
                     </button>
+                    {item.action && <Link className="notification-action" to={item.action.href}>{item.action.label}</Link>}
+                    </article>
                   );
                 })}
               </div>

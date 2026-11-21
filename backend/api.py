@@ -4,6 +4,7 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from flask import Blueprint, current_app, g, jsonify, request, send_file
 from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 from werkzeug.exceptions import BadRequest
 
 from auth import (
@@ -25,6 +26,8 @@ from constants import (
 )
 from db import get_db
 from documents import request_pdf
+from planner import plan_payload, minutes
+from assistant import ask_assistant, student_context
 from serializers import serialize_request, serialize_user
 from services import (
     dashboard_payload,
@@ -253,6 +256,66 @@ def download_request(request_id):
         return jsonify(error="not_found", message="Документ недоступен"), 404
     return send_file(request_pdf(doc, g.user), mimetype="application/pdf",
                      as_attachment=True, download_name=f"campus-{doc['_id']}.pdf")
+
+
+@bp.post("/assistant")
+@login_required
+def assistant_reply():
+    data = _json_body()
+    query = data.get("query")
+    if not isinstance(query, str) or not query.strip() or len(query) > 1200:
+        return jsonify(error="bad_request", message="Напишите запрос до 1200 символов"), 400
+    key = f"assistant:{g.user['_id']}"
+    if not login_allowed(key):
+        return jsonify(error="too_many_attempts", message="Лимит запросов. Попробуйте через несколько минут."), 429
+    login_failed(key)
+    try:
+        return jsonify(ask_assistant(query.strip(), student_context(get_db(), g.user)))
+    except RuntimeError as error:
+        return jsonify(error="assistant_unavailable", message=str(error)), 503
+
+
+@bp.get("/plan")
+@login_required
+def get_plan():
+    duration = request.args.get("duration", 45, type=int)
+    if duration not in (30, 45, 60, 90):
+        return jsonify(error="bad_request", message="Выберите длительность задачи"), 400
+    return jsonify(plan_payload(get_db(), g.user, duration))
+
+
+@bp.post("/plan")
+@login_required
+def add_plan_task():
+    data = _json_body()
+    title = data.get("title")
+    duration = data.get("duration")
+    if not isinstance(title, str) or not title.strip() or len(title) > 120 or type(duration) is not int or duration not in (30, 45, 60, 90):
+        return jsonify(error="bad_request", message="Укажите задачу до 120 символов и длительность"), 400
+    plan = plan_payload(get_db(), g.user, duration)
+    day = next((d for d in plan["days"] if d["date"] == data.get("date")), None)
+    window = next((w for w in day["windows"] if w["start"] == data.get("start")), None) if day else None
+    if not window:
+        return jsonify(error="conflict", message="Это окно уже недоступно. Обновите план."), 409
+    start = minutes(window["start"])
+    try:
+        get_db().plan_tasks.insert_one({"user_id": g.user["_id"], "title": title.strip(), "date": day["date"],
+                                       "start": window["start"], "end": window["suggestedEnd"],
+                                       "slot_ticks": list(range(start // 15, (start + duration + 14) // 15))})
+    except DuplicateKeyError:
+        return jsonify(error="conflict", message="Это время уже занято. Обновите план."), 409
+    return jsonify(ok=True), 201
+
+
+@bp.delete("/plan/<task_id>")
+@login_required
+def remove_plan_task(task_id):
+    try:
+        oid = ObjectId(task_id)
+    except (InvalidId, TypeError):
+        return jsonify(error="not_found"), 404
+    result = get_db().plan_tasks.delete_one({"_id": oid, "user_id": g.user["_id"]})
+    return (jsonify(ok=True), 200) if result.deleted_count else (jsonify(error="not_found"), 404)
 
 
 @bp.get("/notifications")

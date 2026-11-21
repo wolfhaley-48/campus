@@ -14,7 +14,7 @@ test.afterEach(async ({ page }) => {
 
 test("rapid tab changes cancel stale transitions without replacing the header", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Привет, Анна" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /что в планах/ })).toBeVisible();
   await page.evaluate(() => {
     window.__header = document.querySelector(".app-header");
     for (const path of ["/schedule", "/grades", "/requests", "/notifications", "/grades"]) {
@@ -27,7 +27,7 @@ test("rapid tab changes cancel stale transitions without replacing the header", 
   expect(await page.evaluate(() => document.querySelector(".app-header") === window.__header)).toBe(true);
   await expect(page.locator('.header-tab[aria-current="page"]')).toHaveAttribute("href", "/grades");
   await page.goBack();
-  await expect(page.getByRole("heading", { name: "Привет, Анна" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /что в планах/ })).toBeVisible();
   await page.goForward();
   await expect(page.getByRole("heading", { name: "Успеваемость", exact: true })).toBeVisible();
 });

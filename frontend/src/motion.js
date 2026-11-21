@@ -1,6 +1,6 @@
 export const CONTROL_SPRING = { type: "spring", mass: 0.8, stiffness: 440, damping: 38 };
-export const CONTENT_EASE = [0.2, 0, 0, 1];
-export const CONTENT_TRANSITION = { duration: 0.2, ease: CONTENT_EASE };
+export const CONTENT_EASE = [0.23, 1, 0.32, 1];
+export const CONTENT_TRANSITION = { duration: 0.18, ease: CONTENT_EASE };
 
 // Meow Client's proxy sheet: mass .5, stiffness 100, damping ratio 1.1.
 export const SHEET_SPRING = {

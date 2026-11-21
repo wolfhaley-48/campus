@@ -21,6 +21,7 @@ def serialize_user(user):
         "studyForm": user["study_form"],
         "enrolledYear": user["enrolled_year"],
         "attendance": user.get("attendance"),
+        "academicRisk": bool(user.get("academic_risk")),
         "avatarHue": user.get("avatar_hue", 220),
     }
 

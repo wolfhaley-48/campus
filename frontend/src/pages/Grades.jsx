@@ -1,3 +1,5 @@
+import { Link } from "../navigation";
+import { motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
 import { CalendarClock, Check, GraduationCap, Info } from "../icons";
 
@@ -78,41 +80,6 @@ function SubjectRow({ subject }) {
   );
 }
 
-function Distribution({ subjects }) {
-  const counts = [5, 4, 3].map((mark) => ({
-    mark,
-    count: subjects.filter((subject) => subject.grade === mark).length,
-  }));
-  const max = Math.max(1, ...counts.map((item) => item.count));
-  const graded = counts.reduce((sum, item) => sum + item.count, 0);
-
-  if (graded === 0) {
-    return <p className="muted small">В этом семестре пока нет числовых оценок.</p>;
-  }
-
-  return (
-    <div className="distribution">
-      {counts.map((item) => (
-        <div className="distribution-row" key={item.mark}>
-          <span className={`grade-chip small-chip`} data-tone={gradeTone(item.mark)}>
-            {item.mark}
-          </span>
-          <span className="distribution-bar">
-            <span
-              data-tone={gradeTone(item.mark)}
-              style={{ width: `${(item.count / max) * 100}%` }}
-            />
-          </span>
-          <span className="distribution-count">{item.count}</span>
-        </div>
-      ))}
-      <p className="distribution-note">
-        {graded} {plural(graded, "оценка", "оценки", "оценок")} с числовым баллом
-      </p>
-    </div>
-  );
-}
-
 function plannedExams(subjects) {
   return subjects
     .filter((subject) => subject.grade === null || subject.grade === undefined)
@@ -121,8 +88,9 @@ function plannedExams(subjects) {
 }
 
 export default function Grades() {
-  const { user } = useAuth();
   const { data, loading, error, reload } = useApi("/grades");
+  const reduced = useReducedMotion();
+  const [expandedSubject, setExpandedSubject] = useState(null);
   const [activeSemester, setActiveSemester] = useState(null);
 
   if (loading && !data) return <LoadTransition phase="loading"><GradesSkeleton /></LoadTransition>;
@@ -147,88 +115,19 @@ export default function Grades() {
   const semesterNumber = activeSemester ?? summary?.currentSemester;
   const semester =
     data.semesters.find((item) => item.number === semesterNumber) || data.semesters[0];
-  const currentSemester =
-    data.semesters.find((item) => item.number === summary.currentSemester) || semester;
   const exams = plannedExams(semester.subjects);
-  const currentExams = plannedExams(currentSemester.subjects);
-  const isCurrentSemester = semester.number === summary.currentSemester;
-  const sessionDays = daysUntil("2026-12-15");
 
   return (
-    <LoadTransition phase="ready"><div className="page">
-      <PageHeader
-        title="Успеваемость"
-        actions={
-          sessionDays !== null && sessionDays >= 0 ? (
-            <span className="pill pill-lime">
-              До сессии {sessionDays} {daysWord(sessionDays)}
-            </span>
-          ) : null
-        }
-      />
-
-      <div className="stats-grid">
-        <div className="stat-card">
-          <span className="stat-label">Средний балл</span>
-          <div className="stat-value-row">
-            <span className="stat-value">{summary.overallAverage ?? "—"}</span>
-          </div>
-          <span className="stat-note">по всем семестрам</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">В текущем семестре</span>
-          <div className="stat-value-row">
-            <span className="stat-value">{summary.creditsEarned}</span>
-            <span className="stat-suffix">из {summary.creditsTotal} з.е.</span>
-          </div>
-          <div className="stat-bar" aria-hidden="true">
-            <span
-              style={{
-                width: `${summary.creditsTotal ? (summary.creditsEarned / summary.creditsTotal) * 100 : 0}%`,
-              }}
-            />
-          </div>
-        </div>
-        <div className="stat-card" data-tone={summary.debts === 0 ? "success" : "warn"}>
-          <span className="stat-label">Задолженности</span>
-          <div className="stat-value-row">
-            <span className="stat-value">{summary.debts}</span>
-          </div>
-          <span className="stat-note">
-            {summary.debts === 0 ? "Нет пересдач" : "Есть пересдачи"}
-          </span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Экзамены впереди</span>
-          <div className="stat-value-row">
-            <span className="stat-value">{currentExams.length}</span>
-          </div>
-          <span className="stat-note">по текущему семестру</span>
-        </div>
-      </div>
-
+    <LoadTransition phase="ready"><div className="page grades-page" data-risk={summary.debts > 0 || undefined}>
+      <PageHeader title="Успеваемость" />
+      {summary.debts > 0 && <section className="grade-recovery"><b>Долги не исчезнут сами. Разберём по одному.</b><span>Всего несданных дисциплин: {summary.debts}</span><Link className="btn btn-primary" to="/requests?new=1&type=application_retake">Записаться на пересдачу</Link></section>}
       <div className="grades-toolbar">
         <ChoiceGroup label="Семестр" value={semester.number} onChange={setActiveSemester} options={data.semesters.map((item) => ({ key: item.number, label: `${item.number} семестр`, marker: item.number === summary.currentSemester }))} />
-        <span className="pill pill-neutral">
-          {semester.creditsEarned} / {semester.credits} з.е.
-        </span>
+
       </div>
 
-      <ContentSwap value={semester.number}><div className="grades-grid">
+      <ContentSwap value={semester.number}><div className="semester-focus"><div><b>{semester.average ?? "—"}</b><span>Средний балл<br />за выбранный семестр</span></div><p>{semester.creditsEarned} из {semester.credits} зачётных единиц закрыто</p></div><div className="grades-grid">
         <section className="card grade-card">
-          <div className="semester-progress">
-            <div className="stat-bar" aria-hidden="true">
-              <span
-                style={{
-                  width: `${semester.credits ? (semester.creditsEarned / semester.credits) * 100 : 0}%`,
-                }}
-              />
-            </div>
-            <span>
-              {semester.creditsEarned} из {semester.credits} зачётных единиц закрыто
-            </span>
-          </div>
-
           <div className="grade-table-head" aria-hidden="true">
             <span>Дисциплина</span>
             <span>З.Е.</span>
@@ -237,7 +136,10 @@ export default function Grades() {
 
           <div className="grade-list">
             {semester.subjects.map((subject) => (
-              <SubjectRow key={subject.id} subject={subject} />
+              <motion.div layout key={subject.id} transition={reduced ? {duration:0} : {type:"spring", stiffness:360, damping:34}} className="subject-expand" data-expanded={expandedSubject === subject.id || undefined}>
+                <button className="subject-trigger" type="button" aria-expanded={expandedSubject === subject.id} onClick={()=>setExpandedSubject(expandedSubject === subject.id ? null : subject.id)}><SubjectRow subject={subject}/></button>
+                {expandedSubject === subject.id && <motion.div className="subject-detail" initial={reduced ? false : {opacity:0,y:-8}} animate={{opacity:1,y:0}}><p>{subject.comment || (subject.status === "passed" ? "Дисциплина закрыта. Результат уже в ведомости." : "Результат ещё не выставлен. Подготовку можно добавить в личный план.")}</p><Link to={`/plan?task=${encodeURIComponent(`Подготовка: ${subject.subject}`)}&duration=60`}>Найти время на подготовку</Link>{subject.status === "retake" && <Link to="/requests?new=1&type=application_retake">Подать заявление на пересдачу</Link>}</motion.div>}
+              </motion.div>
             ))}
           </div>
 
@@ -252,7 +154,7 @@ export default function Grades() {
             <div className="card-head">
               <h2 className="card-title">Сессия</h2>
               <span className="pill pill-neutral">
-                {isCurrentSemester ? "15–27 декабря" : "Завершена"}
+                {exams.length ? `${exams.length} впереди` : "Нет назначенных"}
               </span>
             </div>
 
@@ -276,41 +178,6 @@ export default function Grades() {
 
           </section>
 
-          <section className="card">
-            <div className="card-head">
-              <h2 className="card-title">Итоги семестра</h2>
-            </div>
-
-            {semester.average != null && (
-              <div className="semester-average">
-                <span className="semester-average-value">{semester.average}</span>
-                <span className="semester-average-label">
-                  средний балл
-                  <br />
-                  за {semester.number} семестр
-                </span>
-              </div>
-            )}
-
-            <Distribution subjects={semester.subjects} />
-
-            <div className="aside-rows">
-              <div className="aside-row">
-                <span>Зачётных единиц</span>
-                <b>
-                  {semester.creditsEarned} / {semester.credits}
-                </b>
-              </div>
-              <div className="aside-row">
-                <span>Дисциплин</span>
-                <b>{semester.subjects.length}</b>
-              </div>
-              <div className="aside-row">
-                <span>Посещение</span>
-                <b>{user.attendance}%</b>
-              </div>
-            </div>
-          </section>
         </aside>
       </div></ContentSwap>
     </div></LoadTransition>

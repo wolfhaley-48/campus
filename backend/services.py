@@ -1,3 +1,5 @@
+import re
+from urllib.parse import urlencode
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -141,7 +143,21 @@ def notifications_payload(db, user, limit=None):
     cursor = db.notifications.find(query).sort("created_at", -1)
     if limit:
         cursor = cursor.limit(limit)
-    items = [serialize_notification(doc, user["_id"]) for doc in cursor]
+    docs = list(cursor)
+    items = [serialize_notification(doc, user["_id"]) for doc in docs]
+    for doc, item in zip(docs, items):
+        if doc.get("category") == "request":
+            number = re.search(r"(?:СП|ЗВ)-[0-9]{4}-[0-9]{4,}", doc.get("title", ""))
+            related = db.requests.find_one({"user_id": user["_id"], "number": number.group()}) if number else None
+            if related:
+                item["action"] = {"label": "Открыть заявку", "href": f"/requests/{related['_id']}"}
+        elif doc.get("category") == "schedule":
+            item["action"] = {"label": "Посмотреть расписание", "href": "/schedule"}
+        elif doc.get("category") == "deadline":
+            text = (doc.get("title", "") + " " + doc.get("body", "")).lower()
+            kind = "application_retake" if "пересдач" in text else "application_scholarship" if "стипенди" in text else None
+            item["action"] = {"label": "Подать заявление" if kind else "Найти время на подготовку",
+                              "href": f"/requests?new=1&type={kind}" if kind else "/plan?" + urlencode({"task":doc["title"], "duration":60})}
     unread = db.notifications.count_documents(
         {**query, "read_by": {"$ne": user["_id"]}}
     )

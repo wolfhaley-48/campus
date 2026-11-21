@@ -85,10 +85,9 @@ export default function Requests() {
   );
 
   return (
-    <LoadTransition phase="ready"><div className="page">
+    <LoadTransition phase="ready"><div className="page requests-page">
       <PageHeader
         title="Заявки и справки"
-        subtitle="Справки и заявления, отправленные в деканат."
         actions={
           <button type="button" className="btn btn-primary" onClick={() => setModalOpen(true)}>
             <Plus size={16} strokeWidth={2.2} aria-hidden="true" />
@@ -99,11 +98,9 @@ export default function Requests() {
 
       <div className="requests-toolbar">
         <ChoiceGroup label="Фильтр заявок" className="filter-bar" buttonClassName="filter-chip" value={filter} onChange={setFilter} options={FILTERS.map((item) => ({ ...item, count: counts[item.key] }))} />
-        <span className="requests-security">Всего: {requests.length}</span>
       </div>
 
       <ContentSwap value={filter}><div className="request-results">
-      {filtered.length > 0 && <div className="request-table-head" aria-hidden="true"><span>Документ и способ получения</span><span>Статус</span><span /></div>}
       {filtered.length === 0 ? (
         <div className="card">
           <EmptyState
@@ -170,7 +167,7 @@ export default function Requests() {
       </Disclosure>
 
       {data && (
-        <NewRequestModal
+        <NewRequestModal initialType={searchParams.get("type")}
           open={modalOpen}
           onClose={closeModal}
           types={data.types}

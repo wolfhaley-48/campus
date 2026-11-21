@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { MotionConfig } from "framer-motion";
 
-import "@fontsource-variable/onest";
+import "@fontsource-variable/golos-text";
 import "./styles/app.css";
 import "./styles/transitions.css";
 

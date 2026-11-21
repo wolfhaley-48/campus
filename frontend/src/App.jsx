@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 
+import Plan from "./pages/Plan";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Grades from "./pages/Grades";
@@ -18,6 +19,7 @@ export default function App() {
       <Route element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="/schedule" element={<Schedule />} />
+        <Route path="/plan" element={<Plan />} />
         <Route path="/grades" element={<Grades />} />
         <Route path="/requests" element={<Requests />} />
         <Route path="/requests/:id" element={<RequestDetail />} />

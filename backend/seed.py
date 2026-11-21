@@ -45,11 +45,13 @@ def grade(user_id, semester, subject, control, value, credits, teacher, status, 
     }
 
 
+from demo_scenarios import apply_demo_scenarios
+
 def main():
     client = MongoClient(Config.MONGO_URI, tz_aware=True, serverSelectionTimeoutMS=5000)
     db = client[Config.DB_NAME]
 
-    for name in ["users", "schedule", "grades", "requests", "notifications", "counters"]:
+    for name in ["users", "schedule", "grades", "requests", "notifications", "counters", "plan_tasks"]:
         db[name].delete_many({})
 
     anna_id = db.users.insert_one(
@@ -323,7 +325,7 @@ def main():
             "group": "ПИ-23-1",
             "user_id": None,
             "category": "deadline",
-            "title": "Заявление на стипендию — до 25 ноября",
+            "title": "Заявление на стипендию",
             "body": "Успейте подать заявление в разделе «Заявки». Проверьте номер карты в профиле.",
             "created_at": ago(hours=5),
             "due_date": (today + timedelta(days=6)).isoformat(),
@@ -387,11 +389,12 @@ def main():
     ]
     db.notifications.insert_many(notifications)
 
+    apply_demo_scenarios(db)
     print("Демо-данные загружены.")
     print(f"База: {Config.DB_NAME}")
     print(f"Анна:   login=anna   password={PASSWORD}")
     print(f"Максим: login=maksim password={PASSWORD}")
-    print(f"Записей: {len(schedule)} занятий, {len(grades)} оценок, {len(requests)} заявок, {len(notifications)} уведомлений")
+    print(f"Записей: {len(schedule)} занятий, {db.grades.count_documents({})} оценок, {len(requests)} заявок, {db.notifications.count_documents({})} уведомлений")
     client.close()
 
 

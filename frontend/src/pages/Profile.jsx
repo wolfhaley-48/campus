@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAppNavigate } from "../navigation";
+import { Link, useAppNavigate } from "../navigation";
 import {
   AtSign,
   BookOpen,
@@ -38,20 +38,18 @@ export default function Profile() {
   };
 
   const rows = [
-    { icon: UserRound, label: "ФИО", value: user.fullName },
     { icon: Building2, label: "Факультет", value: user.faculty },
     {
       icon: BookOpen,
       label: "Направление",
       value: `${user.directionCode} · ${user.direction}`,
     },
-    { icon: CalendarDays, label: "Курс и группа", value: `${user.course} курс · ${user.group}` },
     { icon: IdCard, label: "Номер зачётки", value: user.studentCard },
-    { icon: AtSign, label: "Email", value: user.email },
+    { icon: AtSign, label: "Email", value: <a href={`mailto:${user.email}`}>{user.email}</a> },
   ];
 
   return (
-    <div className="page">
+    <div className="page profile-page">
       <PageHeader
         title="Профиль"
         actions={
@@ -66,7 +64,6 @@ export default function Profile() {
       <section className="profile-hero">
         <Avatar user={user} size="lg" />
         <div className="profile-hero-main">
-          <span className="pill pill-lime">Тестовый аккаунт</span>
           <h2>{user.fullName}</h2>
         </div>
         <div className="profile-hero-tags">
@@ -79,8 +76,7 @@ export default function Profile() {
       <div className="profile-content">
         <section>
           <div className="card-head">
-            <h2 className="card-title">Учётные данные</h2>
-            <span className="pill pill-neutral">из деканата</span>
+            <h2 className="card-title">Обучение и контакты</h2>
           </div>
 
           <dl className="profile-list">
@@ -109,49 +105,12 @@ export default function Profile() {
           <Disclosure className="security-details" title="Как защищены данные">
 
             <ul className="security-list">
-              <li>
-                <span className="security-icon">
-                  <KeyRound size={16} strokeWidth={1.9} aria-hidden="true" />
-                </span>
-                <div>
-                  <b>Пароль</b>
-                   <p>На сервере хранится scrypt-хеш, а не открытый пароль.</p>
-                </div>
-              </li>
-              <li>
-                <span className="security-icon">
-                  <ShieldCheck size={16} strokeWidth={1.9} aria-hidden="true" />
-                </span>
-                <div>
-                  <b>Сессия</b>
-                  <p>
-                    JWT в httpOnly-cookie, SameSite=Lax. Скрипт на странице не может прочитать
-                    токен.
-                  </p>
-                </div>
-              </li>
-              <li>
-                <span className="security-icon">
-                  <UserRound size={16} strokeWidth={1.9} aria-hidden="true" />
-                </span>
-                <div>
-                  <b>Доступ к данным</b>
-                  <p>
-                    Сервер фильтрует оценки и заявки по ID пользователя из токена.
-                    Чужой номер заявки вернёт 404.
-                  </p>
-                </div>
-              </li>
+              <li><ShieldCheck size={20} /><div><b>Только твой аккаунт</b><p>Оценки, заявки и личный план доступны после входа. Другой студент не может открыть их по ссылке.</p></div></li>
+              <li><KeyRound size={20} /><div><b>Общее устройство</b><p>Закрой сессию кнопкой «Выйти», если пользуешься чужим компьютером.</p></div></li>
             </ul>
           </Disclosure>
 
-          <div className="profile-demo">
-            <b>Демо-прототип для конкурса</b>
-            <p>
-              Неофициальный сервис университета. ФИО, оценки, заявки и номера зачёток
-              вымышлены. Второй аккаунт: <code>maksim</code> / <code>kampus2026</code>.
-            </p>
-          </div>
+          <Link className="profile-plan-link" to="/plan">Открыть личный план <CalendarDays size={20} /></Link>
       </div>
       </div>
     </div>

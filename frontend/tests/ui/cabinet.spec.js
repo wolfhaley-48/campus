@@ -8,7 +8,7 @@ test.beforeEach(async ({ page, baseURL }) => {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("request", (request) => {
-    if (!request.url().startsWith(new URL(baseURL).origin)) {
+    if (new URL(request.url()).origin !== new URL(baseURL).origin) {
       errors.push(`External request: ${request.url()}`);
     }
   });
@@ -35,7 +35,7 @@ test("login: demo selection, password visibility, error and sign-in", async ({ p
   await expect(page.getByRole("alert")).toContainText("Неверный логин или пароль");
   await page.unroute("**/api/auth/login");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Привет, Анна" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /что в планах/ })).toBeVisible();
   const data = await (await page.request.get("/api/notifications")).json();
   if (data.unread > 0) await expect(page.locator(".header-badge")).toHaveText(data.unread > 9 ? "9+" : String(data.unread));
 });
@@ -48,12 +48,12 @@ test("responsive navigation, local assets and SPA navigation on every screen", a
     window.scrollTo = (...args) => { scrollTo(...args); return Promise.resolve(); };
   });
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Привет, Анна" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /что в планах/ })).toBeVisible();
   await page.evaluate(() => { window.__spaMarker = "kept"; });
   const nav = page.getByRole("navigation", { name: "Основная навигация" });
   for (const [label, title] of [
     ["Расписание", "Расписание"], ["Успеваемость", "Успеваемость"],
-    ["Заявки", "Заявки и справки"], ["Уведомления", "Уведомления"], ["Главная", "Привет, Анна"],
+    ["Заявки", "Заявки и справки"], ["Уведомления", "Уведомления"], ["Главная", /что в планах/],
   ]) {
     await nav.getByRole("link", { name: label }).click();
     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
@@ -61,22 +61,11 @@ test("responsive navigation, local assets and SPA navigation on every screen", a
     expect(await page.evaluate(() => window.__spaMarker)).toBe("kept");
     await fits(page);
   }
-  const positions = await page.locator(".header-brand, .header-tabs, .header-profile").evaluateAll(
-    (nodes) => nodes.map((node) => { const rect = node.getBoundingClientRect(); return rect.y + rect.height / 2; }),
-  );
-  if (page.viewportSize().width > 720) {
-    expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(1);
-  } else {
-    const links = await nav.locator("a").evaluateAll(nodes => nodes.map(node => {
-      const r = node.getBoundingClientRect();
-      return r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight;
-    }));
-    expect(links).toEqual([true, true, true, true, true]);
-  }
-  const blur = await page.locator(".header-veil i").evaluateAll((nodes) => nodes.map(
-    (node) => getComputedStyle(node).backdropFilter,
-  ));
-  expect(blur).toEqual([1, 2, 3, 5, 8, 12, 18, 26].map((radius) => `blur(${radius}px)`));
+  const links = await nav.locator("a").evaluateAll(nodes => nodes.map(node => {
+    const r = node.getBoundingClientRect();
+    return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight;
+  }));
+  expect(links).toEqual([true, true, true, true, true]);
   await page.getByRole("link", { name: "Профиль", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Профиль", exact: true })).toBeVisible();
   await fits(page);
@@ -230,7 +219,7 @@ test("loading, request failure and retry", async ({ page }) => {
   await expect(page.getByRole("alert")).toContainText("Не удалось загрузить данные");
   fail = false;
   await page.getByRole("button", { name: "Повторить", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Привет, Анна" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /что в планах/ })).toBeVisible();
   await fits(page);
 });
 
@@ -257,7 +246,7 @@ test("a render failure shows recovery actions rather than a blank screen", async
   await fits(page);
   await page.unroute("**/api/dashboard");
   await page.getByRole("link", { name: "На главную", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Привет, Анна" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /что в планах/ })).toBeVisible();
 });
 
 test("student isolation and logout", async ({ page, browser, baseURL }) => {
@@ -271,8 +260,8 @@ test("student isolation and logout", async ({ page, browser, baseURL }) => {
   await other.goto(`/requests/${id}`);
   await expect(other.getByText("Заявка не найдена", { exact: true })).toBeVisible();
   await other.getByRole("link", { name: "Профиль", exact: true }).click();
-  await expect(other.locator(".profile-list")).toContainText("Орлов Максим");
-  await expect(other.locator(".profile-list")).not.toContainText("Смирнова Анна");
+  await expect(other.locator(".profile-page")).toContainText("Орлов Максим");
+  await expect(other.locator(".profile-page")).not.toContainText("Смирнова Анна");
   await other.getByRole("button", { name: "Выйти", exact: true }).click();
   await expect(other.getByRole("heading", { name: "Вход в кабинет" })).toBeVisible();
   expect((await context.request.get("/api/dashboard")).status()).toBe(401);

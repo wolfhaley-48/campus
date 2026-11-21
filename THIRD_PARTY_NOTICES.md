@@ -36,11 +36,12 @@ material keeps its own licence; see THIRD_PARTY.md.
 
 ## Шрифты
 
+- Golos Text — SIL Open Font License 1.1, https://github.com/googlefonts/golos-text
 - Inter — SIL Open Font License 1.1, https://github.com/rsms/inter
 - Unbounded — SIL Open Font License 1.1, https://github.com/googlefonts/unbounded
 - Onest — SIL Open Font License 1.1, Copyright 2021 The Onest Project Authors, https://github.com/simpals/onest
 
-Текущий интерфейс использует локальный `@fontsource-variable/onest`. Inter и Unbounded относятся к предыдущей версии и остаются в зависимостях проекта.
+Текущий интерфейс использует локальный `@fontsource-variable/golos-text`. Onest, Inter и Unbounded относятся к историческим версиям в архивах; их пакеты удалены из текущих зависимостей.
 
 ## Иконки
 
@@ -57,3 +58,7 @@ React, React DOM, React Router, Framer Motion, Iconify, Vite — лицензи�
 
 ReportLab — BSD, Pillow — HPND (лицензии поставляются с Python-пакетами).
 Шрифт Noto Sans — SIL Open Font License 1.1; копия лицензии: `backend/fonts/LICENSE`.
+
+## Шейдеры
+
+Paper Shaders (`@paper-design/shaders-react` 0.0.82 и `@paper-design/shaders`) — Apache-2.0. LICENSE и NOTICE поставляются в npm-пакетах. LiquidMetal применяется к собственному знаку «Кампуса», HalftoneDots — к собственному изображению study-rhythm.svg. React Bits пока не используется.

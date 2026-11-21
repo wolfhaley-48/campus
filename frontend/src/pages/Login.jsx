@@ -69,6 +69,11 @@ export default function Login() {
 
   return (
     <div className="login">
+      <aside className="login-story" aria-label="О кабинете">
+        <span className="login-story-tag">Твой учебный ритм</span>
+        <h2>Все пары.<br />Все планы.<br />Один кампус.</h2>
+        <p>Расписание, оценки и документы — рядом, когда нужны.</p>
+      </aside>
       <motion.main className="login-form-side" initial={reduced ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={CONTENT_TRANSITION}>
         <div className="login-form-wrap">
           <div className="login-mobile-brand">
@@ -140,7 +145,7 @@ export default function Login() {
           </section>
 
           <p className="login-footnote">
-            Демо-прототип для конкурса, доступен до 28 ноября без VPN.
+            Конкурсный прототип цифрового деканата.
             Неофициальный сервис университета. Все данные вымышлены.
           </p>
         </div>

@@ -18,6 +18,9 @@ def init_db(app):
     app.extensions["mongo_client"] = client
 
     db = client[app.config["DB_NAME"]]
+    db.plan_tasks.create_index([("user_id", ASCENDING), ("date", ASCENDING), ("slot_ticks", ASCENDING)],
+                               unique=True, partialFilterExpression={"slot_ticks": {"$exists": True}})
+    db.plan_tasks.create_index([("user_id", ASCENDING), ("date", ASCENDING)])
     db.users.create_index("login", unique=True)
     db.schedule.create_index([("group", ASCENDING), ("weekday", ASCENDING), ("start", ASCENDING)])
     db.grades.create_index([("user_id", ASCENDING), ("semester", ASCENDING)])

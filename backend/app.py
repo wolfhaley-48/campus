@@ -54,7 +54,7 @@ def create_app(config_class=Config):
             "script-src 'self'; "
             "style-src 'self' 'unsafe-inline'; "
             "font-src 'self' data:; "
-            "img-src 'self' data:; "
+            "img-src 'self' data: blob:; "
             "connect-src 'self'; "
             "object-src 'none'; "
             "frame-ancestors 'none'; "

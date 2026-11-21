@@ -8,7 +8,7 @@ export default defineConfig({
   use: {
     baseURL: process.env.UI_BASE_URL || "http://127.0.0.1:5000",
     storageState: ".playwright/anna.json",
-    launchOptions: { executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium" },
+    launchOptions: process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
   },

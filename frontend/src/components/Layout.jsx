@@ -4,6 +4,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Bell, CalendarDays, FileText, GraduationCap, LayoutDashboard } from "../icons";
 import { Link, useNativeNavigation } from "../navigation";
 import { useAuth } from "../auth";
+import { AssistantDock } from "./AssistantDock";
 import { Avatar } from "./Avatar";
 import { LogoMark } from "./Logo";
 import { FullscreenLoader } from "./States";
@@ -17,8 +18,6 @@ const NAV = [
   { to: "/requests", label: "Заявки", icon: FileText },
   { to: "/notifications", label: "Уведомления", icon: Bell },
 ];
-
-const BLUR = [[1, 62, 100], [2, 56, 96], [3, 50, 92], [5, 44, 86], [8, 36, 78], [12, 28, 68], [18, 20, 56], [26, 10, 44]];
 
 function AppHeader() {
   const { pathname } = useLocation();
@@ -50,10 +49,6 @@ function AppHeader() {
 
   return (
     <>
-      <div className="header-veil" aria-hidden="true">
-        {BLUR.map(([radius, solid, end]) => <i key={radius} style={{ "--blur": `${radius}px`, "--solid": `${solid}%`, "--end": `${end}%` }} />)}
-        <span />
-      </div>
       <header className="app-header">
         <div className="app-header-inner">
           <Link to="/" className="header-brand" aria-label="Кампус, на главную">
@@ -101,10 +96,11 @@ export default function Layout() {
   if (loading) return <FullscreenLoader />;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
 
-  return <div className="shell">
+  return <div className="shell" data-risk={user.academicRisk || undefined}>
     <a className="skip-link" href="#main-content">Перейти к содержимому</a>
     <AppHeader />
     <main className="main-inner" id="main-content"><RouteStage /></main>
+    <AssistantDock />
     <footer className="app-footer"><span>Кампус · демо</span><span>Неофициальный сервис. Все данные вымышлены.</span></footer>
   </div>;
 }
