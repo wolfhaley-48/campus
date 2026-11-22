@@ -6,6 +6,8 @@ import { useAuth } from "../auth";
 import { PageHeader } from "../components/PageHeader";
 import { ErrorState } from "../components/States";
 import { Avatar } from "../components/Avatar";
+import { PaperBurst } from "../components/PaperBurst";
+import { plural } from "../utils";
 
 const merge = (a, b) =>
   [...new Map([...a, ...b].map((item) => [item.id, item])).values()].sort(
@@ -27,6 +29,7 @@ export default function Social() {
     [loadFailure, setLoadFailure] = useState(""),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(false),
+    [burst, setBurst] = useState(0),
     [unseen, setUnseen] = useState(false);
   const view = useRef(null),
     pending = useRef(null),
@@ -147,6 +150,7 @@ export default function Social() {
           result.item.id > latest.current ? result.item.id : latest.current;
         setDraft("");
         pending.current = null;
+        setBurst((value) => value + 1);
         reload();
       }
     } catch (e) {
@@ -191,7 +195,6 @@ export default function Social() {
               <button
                 key={thread.id}
                 type="button"
-                disabled={busy}
                 aria-pressed={channel === thread.id}
                 onClick={() => setParams({ thread: thread.id })}
               >
@@ -206,8 +209,10 @@ export default function Social() {
                   <b>{thread.kind === "group" ? "Чат группы" : thread.title}</b>
                   <small>
                     {thread.kind === "group" ? user.group : "Личка"} ·{" "}
-                    {thread.unread || 0} новых
+                    {thread.unread || 0}{" "}
+                    {plural(thread.unread || 0, "новое", "новых", "новых")}
                   </small>
+                  <span className="thread-preview">{thread.preview}</span>
                 </span>
               </button>
             ))}
@@ -244,10 +249,19 @@ export default function Social() {
               {loading && !messages.length ? (
                 <p>Загружаем переписку…</p>
               ) : !messages.length ? (
-                <p className="conversation-empty">
-                  Пока тихо. Кинь первый месседж — поздоровайся или собери людей
-                  на движ.
-                </p>
+                <div className="conversation-empty">
+                  <p>
+                    Пока тихо. Кинь первый месседж — поздоровайся или собери
+                    людей на движ.
+                  </p>
+                  <div className="chat-starters">
+                    {["Привет! Как дела?", "Что задали?", "Собираемся после пар?"].map((text) => (
+                      <button key={text} type="button" onClick={() => setDraft(text)}>
+                        {text}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ) : (
                 messages.map((item) => (
                   <article
@@ -292,6 +306,7 @@ export default function Social() {
               </div>
             )}
             <form className="message-compose" onSubmit={send}>
+              <PaperBurst trigger={burst} />
               <label className="sr-only" htmlFor="chat-message">
                 Сообщение
               </label>

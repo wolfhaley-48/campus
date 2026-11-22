@@ -31,7 +31,20 @@ class Config:
         if origin.strip()
     ]
 
+    # Origin mutations are checked against this fixed list, never against the
+    # client-supplied Host header. Production adds the public host here.
+    TRUSTED_HOSTS = [
+        host.strip()
+        for host in os.getenv(
+            "TRUSTED_HOSTS",
+            "127.0.0.1:5000,localhost:5000,127.0.0.1:5173,localhost:5173",
+        ).split(",")
+        if host.strip()
+    ]
+
     LOGIN_RATE_LIMIT = int(os.getenv("LOGIN_RATE_LIMIT", "10"))
     LOGIN_RATE_WINDOW = int(os.getenv("LOGIN_RATE_WINDOW", "300"))
+    SOCIAL_RATE_LIMIT = int(os.getenv("SOCIAL_RATE_LIMIT", "30"))
+    SOCIAL_RATE_WINDOW = int(os.getenv("SOCIAL_RATE_WINDOW", "300"))
 
     FRONTEND_DIST = BASE_DIR.parent / "frontend" / "dist"

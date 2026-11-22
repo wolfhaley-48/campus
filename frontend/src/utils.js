@@ -144,6 +144,7 @@ export function gradeTone(grade) {
   if (grade === "Зачтено" || grade === 5) return "excellent";
   if (grade === 4) return "good";
   if (grade === 3) return "warn";
+  if (typeof grade === "number" || /^[1-5]$/.test(String(grade))) return "bad";
   return "pending";
 }
 

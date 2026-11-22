@@ -118,7 +118,7 @@ export default function Schedule() {
   };
 
   return (
-    <LoadTransition phase="ready"><div className="page">
+    <LoadTransition phase="ready"><div className="page schedule-page">
       <PageHeader
         title="Расписание"
         actions={

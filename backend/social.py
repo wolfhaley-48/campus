@@ -1,13 +1,13 @@
 """Fictional campus wall and member-scoped conversations."""
 
 from datetime import datetime, timedelta, timezone
-from uuid import UUID
+from uuid import NAMESPACE_URL, UUID, uuid5
 from bson import ObjectId
 from bson.errors import InvalidId
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request
 from pymongo.errors import DuplicateKeyError
 from werkzeug.exceptions import BadRequest, NotFound
-from auth import login_required
+from auth import login_required, rate_allowed, rate_hit
 from db import get_db
 
 social = Blueprint("social", __name__, url_prefix="/api/social")
@@ -52,16 +52,33 @@ def author(db, doc):
     user = db.users.find_one(
         {"_id": doc.get("author_id")}, {"full_name": 1, "login": 1, "group": 1}
     )
-    return (
-        identity(user)
-        if user
-        else {
-            "id": "demo",
-            "fullName": "Редакция Кампуса · демо",
-            "login": "demo",
-            "group": "",
-        }
-    )
+    if user:
+        return identity(user)
+    demo = doc.get("demo_author")
+    if isinstance(demo, dict):
+        values = [demo.get(key) for key in ("fullName", "login", "group")]
+        if all(isinstance(value, str) and len(value) <= 120 for value in values):
+            return {
+                "id": str(demo.get("id", "demo"))[:80],
+                "fullName": values[0],
+                "login": values[1],
+                "group": values[2],
+            }
+    return {
+        "id": "demo",
+        "fullName": "Редакция Кампуса · демо",
+        "login": "demo",
+        "group": "",
+    }
+
+
+def allow_social(key):
+    limit = current_app.config.get("SOCIAL_RATE_LIMIT", 30)
+    window = current_app.config.get("SOCIAL_RATE_WINDOW", 300)
+    if not rate_allowed(key, limit, window):
+        return False
+    rate_hit(key)
+    return True
 
 
 def serialize(db, doc):
@@ -124,6 +141,8 @@ def publish():
         or scope not in ("all", "group")
     ):
         raise BadRequest("Напиши пост до 2000 символов и выбери, кому его показать")
+    if not allow_social(f"social-post:{g.user['_id']}"):
+        return jsonify(error="too_many", message="Слишком часто. Подожди пару минут."), 429
     db = get_db()
     doc = {
         "body": text.strip(),
@@ -220,7 +239,9 @@ def send(channel):
     try:
         UUID(client_id)
     except (ValueError, TypeError, AttributeError):
-        raise BadRequest("Не удалось определить отправку. Попробуй ещё раз")
+        raise BadRequest("Не удалось подтвердить отправку. Попробуй ещё раз")
+    if not allow_social(f"social-message:{g.user['_id']}"):
+        return jsonify(error="too_many", message="Слишком часто. Подожди пару минут."), 429
     key = {"channel": channel, "author_id": g.user["_id"], "client_id": client_id}
     doc = {**key, "body": text.strip(), "created_at": datetime.now(timezone.utc)}
     try:
@@ -301,3 +322,40 @@ def seed_social_demo(db):
             },
             upsert=True,
         )
+
+    # Populate the study-group chats so a new demo account does not open into
+    # an empty white rectangle. These are snapshot authors, not login accounts.
+    group_threads = {
+        "ПИ-23-1": [
+            ("Марина Ковалёва", "marina", "Кто идёт на консультацию в 16:40? Собираемся у 214, можно с вопросами по курсовой.", 95),
+            ("Илья Соколов", "ilya", "Скинул конспект по базам в общий диск. Если что-то не открывается — напишите.", 70),
+            ("Даша Лебедева", "dasha", "После пар есть полчаса на кофе. Кто с нами?", 35),
+            ("Марина Ковалёва", "marina", "Напоминаю: завтра первая пара в 9:00, не проспите.", 12),
+        ],
+        "ЭК-24-2": [
+            ("Тимур Ахметов", "timur", "Кто уже разобрался с задачей по статистике? Могу показать решение.", 80),
+            ("Лена Фёдорова", "lena", "Собираемся в библиотеке в 15:00, тихий зал на втором этаже.", 40),
+            ("Тимур Ахметов", "timur", "Скиньте, пожалуйста, фото конспекта за пятницу.", 15),
+        ],
+    }
+    for group, entries in group_threads.items():
+        for index, (name, login, text, minutes) in enumerate(entries):
+            demo_key = f"group-{group}-{index}"
+            db.social_messages.update_one(
+                {"demo_key": demo_key},
+                {"$setOnInsert": {
+                    "channel": f"group:{group}",
+                    "author_id": None,
+                    "client_id": str(uuid5(NAMESPACE_URL, "campus:" + demo_key)),
+                    "body": text,
+                    "created_at": now - timedelta(minutes=minutes),
+                    "demo_key": demo_key,
+                    "demo_author": {
+                        "id": f"demo:{login}",
+                        "fullName": name,
+                        "login": login,
+                        "group": group,
+                    },
+                }},
+                upsert=True,
+            )

@@ -7,6 +7,7 @@ import {
 } from "react";
 import { api } from "../api";
 import { Avatar } from "./Avatar";
+import { PaperBurst } from "./PaperBurst";
 
 export function NewsWall() {
   const [items, setItems] = useState([]),
@@ -18,7 +19,8 @@ export function NewsWall() {
     [scope, setScope] = useState("group"),
     [sending, setSending] = useState(false),
     [sendError, setSendError] = useState(""),
-    [trimmed, setTrimmed] = useState(false);
+    [burst, setBurst] = useState(0);
+  const trimmed = items.length >= 60;
   const end = useRef(null),
     wall = useRef(null),
     busy = useRef(false),
@@ -56,7 +58,6 @@ export function NewsWall() {
         const unique = [
           ...new Map(all.map((item) => [item.id, item])).values(),
         ];
-        if (unique.length > 60) setTrimmed(true);
         return unique.slice(-60);
       });
       setCursor(data.nextCursor);
@@ -99,6 +100,7 @@ export function NewsWall() {
       const data = await api.post("/social/feed", { body: draft, scope });
       setItems((current) => [data.item, ...current].slice(0, 60));
       setDraft("");
+      setBurst((value) => value + 1);
     } catch (e) {
       setSendError(e.message);
     } finally {
@@ -111,7 +113,6 @@ export function NewsWall() {
     setCursor(null);
     setMore(true);
     setError("");
-    setTrimmed(false);
     wall.current.scrollIntoView({ block: "start" });
   };
   return (
@@ -123,6 +124,7 @@ export function NewsWall() {
       <details className="wall-publish">
         <summary>Кинуть пост на стену ↗</summary>
         <form onSubmit={publish} className="wall-compose">
+          <PaperBurst trigger={burst} />
           <label htmlFor="wall-draft">Есть что рассказать?</label>
           <textarea
             id="wall-draft"
@@ -155,11 +157,6 @@ export function NewsWall() {
           {sendError && <p role="alert">{sendError}</p>}
         </form>
       </details>
-      {trimmed && (
-        <button className="btn wall-reset" disabled={loading} onClick={reset}>
-          К новым постам ↑
-        </button>
-      )}
       <div className="wall-posts">
         {items.map((item) => (
           <article className="wall-post" key={item.id} data-post={item.id}>

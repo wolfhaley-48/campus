@@ -16,7 +16,7 @@ export function EmptyState({ icon: Icon, title, text, action }) {
   );
 }
 
-export function ErrorState({ text = "Проверьте подключение и попробуйте ещё раз.", onRetry }) {
+export function ErrorState({ text = "Проверь подключение и попробуй ещё раз.", onRetry }) {
   return (
     <div className="error-state" role="alert">
       <span className="empty-icon">

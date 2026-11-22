@@ -21,6 +21,22 @@ class RequestBodyTest(unittest.TestCase):
                         self.assertEqual(response.status_code, 400)
                         self.assertEqual(response.json['error'], 'bad_request')
 
+    def test_api_without_slash_is_json_404(self):
+        with app.test_client() as client:
+            response = client.get('/api')
+            self.assertEqual(response.status_code, 404)
+            self.assertEqual(response.json['error'], 'not_found')
+
+    def test_untrusted_origin_is_rejected_before_login(self):
+        with app.test_client() as client:
+            response = client.post(
+                '/api/auth/login',
+                json={'login': 'anna', 'password': 'kampus2026'},
+                headers={'Origin': 'https://evil.example'},
+            )
+            self.assertEqual(response.status_code, 403)
+            self.assertEqual(response.json['error'], 'forbidden_origin')
+
 class ScheduleRangeTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

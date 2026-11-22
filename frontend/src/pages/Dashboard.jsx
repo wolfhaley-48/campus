@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "../navigation";
 import { ArrowRight, FileText } from "../icons";
 import { useAuth } from "../auth";
@@ -17,15 +17,9 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { data, loading, error, reload } = useApi("/dashboard");
   const [motionOn, setMotionOn] = useState(true);
-  const [wide, setWide] = useState(
+  const [studyOpen, setStudyOpen] = useState(
     () => window.matchMedia("(min-width:721px)").matches,
   );
-  useEffect(() => {
-    const query = window.matchMedia("(min-width:721px)");
-    const update = () => setWide(query.matches);
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
   if (loading)
     return (
       <LoadTransition phase="loading">
@@ -55,13 +49,15 @@ export default function Dashboard() {
               {plural(lessons.length, "пара", "пары", "пар")} сегодня
             </Link>
             <Link to="/requests" className="brief-docs">
-              <b>{data.stats.activeRequests}</b>заявки в работе
+              <b>{data.stats.activeRequests}</b>{" "}
+              {plural(data.stats.activeRequests, "заявка", "заявки", "заявок")} в работе
             </Link>
             <Link
               to="/grades"
               className={data.stats.debts ? "brief-risk" : "brief-good"}
             >
-              <b>{data.stats.debts}</b>долгов
+              <b>{data.stats.debts}</b>{" "}
+              {plural(data.stats.debts, "долг", "долга", "долгов")}
             </Link>
           </nav>
         </header>
@@ -94,7 +90,11 @@ export default function Dashboard() {
         <div className="home-social">
           <aside className="home-context" aria-label="Твой день и чаты">
             <ChatPreview />
-            <details className="home-study-context" open={wide}>
+            <details
+              className="home-study-context"
+              open={studyOpen}
+              onToggle={(event) => setStudyOpen(event.currentTarget.open)}
+            >
               <summary>
                 {next ? `Следующая пара · ${next.lesson.start}` : "Твоя учёба"}{" "}
                 <span>↘</span>

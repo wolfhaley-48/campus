@@ -46,7 +46,7 @@ export default function Login() {
   const submit = async (event) => {
     event.preventDefault();
     if (!loginValue.trim() || !password) {
-      setError("Введите логин и пароль.");
+      setError("Введи логин и пароль.");
       return;
     }
     setBusy(true);
@@ -56,7 +56,7 @@ export default function Login() {
       const target = location.state?.from || "/";
       navigate(target, { replace: true });
     } catch (requestError) {
-      setError(requestError.message || "Не удалось войти. Проверьте логин и пароль.");
+      setError(requestError.message || "Не удалось войти. Проверь логин и пароль.");
     } finally {
       setBusy(false);
     }

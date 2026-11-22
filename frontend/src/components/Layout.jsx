@@ -1,7 +1,7 @@
 import { Suspense, useLayoutEffect, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { Bell, CalendarDays, FileText, GraduationCap, LayoutDashboard } from "../icons";
+import { Bell, CalendarDays, FileText, GraduationCap, LayoutDashboard, Messages } from "../icons";
 import { Link, useNativeNavigation } from "../navigation";
 import { useAuth } from "../auth";
 import { AssistantDock } from "./AssistantDock";
@@ -17,7 +17,7 @@ const NAV = [
   { to: "/grades", label: "Успеваемость", icon: GraduationCap },
   { to: "/requests", label: "Заявки", icon: FileText },
   { to: "/notifications", label: "Уведомления", icon: Bell },
-  { to: "/social", label: "Социалка", icon: Bell },
+  { to: "/social", label: "Социалка", icon: Messages },
 ];
 
 function AppHeader() {

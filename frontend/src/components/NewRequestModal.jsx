@@ -165,7 +165,7 @@ function RequestDialog({ onClose, types, delivery, onCreated, initialType }) {
         <label className="field-label" htmlFor="request-comment">Комментарий <span>необязательно</span></label>
         <textarea id="request-comment" className="textarea" disabled={sending} maxLength={600} value={comment} onChange={(event) => setComment(event.target.value)} placeholder="Например, для предоставления в банк" rows={3} />
         <span className="char-count">{comment.length} / 600</span>
-        <div className="modal-note"><ShieldCheck size={15} aria-hidden="true" />Заявка будет отправлена от вашего имени.</div>
+        <div className="modal-note"><ShieldCheck size={15} aria-hidden="true" />Заявка уйдёт от твоего имени.</div>
       </div>
 
       <footer className="modal-foot">

@@ -34,11 +34,11 @@ def create_app(config_class=Config):
     def before_request():
         if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             origin = request.headers.get("Origin")
-            host = request.host
-            allowed = set(app.config["FRONTEND_ORIGINS"]) | {
-                f"https://{host}",
-                f"http://{host}",
-            }
+            allowed = set(app.config["FRONTEND_ORIGINS"])
+            for host in app.config["TRUSTED_HOSTS"]:
+                allowed.add(f"https://{host}")
+                allowed.add(f"http://{host}")
+            # Never trust request.host here: a client can spoof Host.
             if origin and origin not in allowed:
                 return jsonify(error="forbidden_origin", message="Запрос с чужого источника"), 403
         g.user = load_user()
@@ -87,7 +87,7 @@ def create_app(config_class=Config):
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
     def serve_frontend(path):
-        if path.startswith("api/"):
+        if path == "api" or path.startswith("api/"):
             return jsonify(error="not_found"), 404
 
         dist = app.config["FRONTEND_DIST"]

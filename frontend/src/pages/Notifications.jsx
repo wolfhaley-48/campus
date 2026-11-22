@@ -238,7 +238,7 @@ export default function Notifications() {
       </ContentSwap>
 
       </div>
-      <p className="notifications-note">Нажмите на уведомление, чтобы отметить прочитанным.</p>
+      <p className="notifications-note">Нажми на уведомление, чтобы отметить прочитанным.</p>
     </div></LoadTransition>
   );
 }

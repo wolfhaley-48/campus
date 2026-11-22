@@ -25,7 +25,7 @@ async function request(path, options = {}) {
     // пустой ответ — не ошибка сама по себе
   }
 
-  if (response.status === 401) {
+  if (response.status === 401 && !path.startsWith("/auth/login")) {
     window.dispatchEvent(new Event("campus:unauthorized"));
   }
 

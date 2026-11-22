@@ -1,15 +1,15 @@
 import { test, expect } from '@playwright/test';
 
 test('assistant keeps the query on failure and offers only returned actions', async ({page}) => {
-  await page.route('**/api/assistant', route => route.fulfill({status:503,json:{message:'Gemini временно недоступен'}}));
+  await page.route('**/api/assistant', route => route.fulfill({status:503,json:{message:'Помощник временно недоступен'}}));
   await page.goto('/');
   await page.getByRole('button',{name:'Открыть панель помощника'}).click();
   await page.getByRole('button',{name:'Найди 45 минут на подготовку',exact:true}).click();
   await page.getByRole('button',{name:'Составить план с ИИ'}).click();
-  await expect(page.getByRole('alert')).toContainText('Gemini временно недоступен');
+  await expect(page.getByRole('alert')).toContainText('Помощник временно недоступен');
   await expect(page.getByLabel('Что решаем?')).toHaveValue('Найди 45 минут на подготовку');
   await page.unroute('**/api/assistant');
-  await page.route('**/api/assistant', route => route.fulfill({json:{answer:'В расписании есть свободное время. Выбери подходящее окно.',provider:'Gemini',actions:[{label:'Выбрать время',href:'/plan'}]}}));
+  await page.route('**/api/assistant', route => route.fulfill({json:{answer:'В расписании есть свободное время. Выбери подходящее окно.',provider:'Pollinations',actions:[{label:'Выбрать время',href:'/plan'}]}}));
   await page.getByRole('button',{name:'Составить план с ИИ'}).click();
   await expect(page.getByRole('heading',{name:'От запроса — к действию'})).toBeVisible();
   await page.getByRole('link',{name:'Выбрать время',exact:true}).click();

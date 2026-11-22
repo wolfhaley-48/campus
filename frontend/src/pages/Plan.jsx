@@ -21,7 +21,7 @@ export default function Plan() {
   const deadlines = notifications.data?.notifications.filter(item => item.dueDate) || [];
   const save = async (day, slot) => {
     if (busy) return;
-    if (!title.trim()) { setMessage("Сначала напишите, чем хотите заняться."); document.getElementById("plan-title")?.focus(); return; }
+    if (!title.trim()) { setMessage("Сначала напиши, чем хочешь заняться."); document.getElementById("plan-title")?.focus(); return; }
     setBusy(true); setMessage("");
     try {
       await api.post("/plan", { title, duration, date: day.date, start: slot.start });

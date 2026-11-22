@@ -84,19 +84,29 @@ _ATTEMPTS: dict[str, list[float]] = {}
 _ATTEMPTS_LOCK = Lock()
 
 
-def login_allowed(key: str) -> bool:
+def rate_allowed(key: str, limit: int, window: int) -> bool:
     now = time.time()
-    window = current_app.config["LOGIN_RATE_WINDOW"]
-    limit = current_app.config["LOGIN_RATE_LIMIT"]
     with _ATTEMPTS_LOCK:
         recent = [stamp for stamp in _ATTEMPTS.get(key, []) if now - stamp < window]
         _ATTEMPTS[key] = recent
         return len(recent) < limit
 
 
-def login_failed(key: str):
+def rate_hit(key: str):
     with _ATTEMPTS_LOCK:
         _ATTEMPTS.setdefault(key, []).append(time.time())
+
+
+def login_allowed(key: str) -> bool:
+    return rate_allowed(
+        key,
+        current_app.config["LOGIN_RATE_LIMIT"],
+        current_app.config["LOGIN_RATE_WINDOW"],
+    )
+
+
+def login_failed(key: str):
+    rate_hit(key)
 
 
 def login_succeeded(key: str):

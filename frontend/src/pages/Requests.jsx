@@ -51,9 +51,10 @@ export default function Requests() {
 
   const closeModal = useCallback(() => {
     setModalOpen(false);
-    if (searchParams.get("new")) {
+    if (searchParams.get("new") || searchParams.get("type")) {
       const next = new URLSearchParams(searchParams);
       next.delete("new");
+      next.delete("type");
       setSearchParams(next, { replace: true });
     }
   }, [searchParams, setSearchParams]);
@@ -168,7 +169,7 @@ export default function Requests() {
       </Disclosure>
 
       {data && (
-        <NewRequestModal initialType={searchParams.get("type")}
+        <NewRequestModal initialType={modalOpen ? searchParams.get("type") : null}
           open={modalOpen}
           onClose={closeModal}
           types={data.types}
