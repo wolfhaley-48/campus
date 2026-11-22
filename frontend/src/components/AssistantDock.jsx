@@ -7,8 +7,7 @@ import { CONTROL_SPRING } from "../motion";
 
 const INTENTS = ["Найди 45 минут на подготовку", "Что изменилось в расписании?", "Как получить справку?", "Что с моей учёбой?"];
 
-export function AssistantDock() {
-  const [expanded, setExpanded] = useState(false);
+export function AssistantDock({ expanded, setExpanded }) {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState(null);
   const [failure, setFailure] = useState("");

@@ -60,6 +60,79 @@ class AssistantTest(unittest.TestCase):
         self.assertEqual(result['answer'], 'Смотри расписание.')
         self.assertEqual(result['actions'], [{'label': 'Проверить расписание', 'href': '/schedule'}])
 
+    def test_openrouter_uses_free_model_headers_and_json_mode(self):
+        content = '{"answer":"Проверь расписание.","actionIds":["schedule"]}'
+        raw = {'choices': [{'message': {'content': content}}]}
+        env = {
+            'ASSISTANT_PROVIDER': 'openrouter',
+            'OPENROUTER_API_KEY': 'test-openrouter-key',
+            'OPENROUTER_MODEL': 'nvidia/nemotron-3-ultra-550b-a55b:free',
+            'OPENROUTER_BASE_URL': 'https://openrouter.test/api/v1',
+            'OPENROUTER_SITE_URL': 'https://campus.test',
+            'OPENROUTER_APP_NAME': 'Campus test',
+        }
+        with patch.dict('os.environ', env, clear=False), \
+                patch('assistant.urlopen', return_value=io.BytesIO(json.dumps(raw).encode())) as call:
+            result = ask_assistant('Что в расписании?', {'today': []})
+        request = call.call_args.args[0]
+        self.assertEqual(request.full_url, 'https://openrouter.test/api/v1/chat/completions')
+        self.assertEqual(request.get_header('Authorization'), 'Bearer test-openrouter-key')
+        self.assertEqual(request.get_header('Http-referer'), 'https://campus.test')
+        self.assertEqual(request.get_header('X-title'), 'Campus test')
+        payload = json.loads(request.data)
+        self.assertEqual(payload['model'], 'nvidia/nemotron-3-ultra-550b-a55b:free')
+        self.assertEqual(payload['response_format'], {'type': 'json_object'})
+        self.assertEqual(payload['max_tokens'], 4096)
+        self.assertEqual(result['provider'], 'OpenRouter')
+        self.assertEqual(result['actions'], [{'label': 'Проверить расписание', 'href': '/schedule'}])
+
+    def test_auto_prefers_openrouter_when_deepseek_key_is_absent(self):
+        raw = {'answer': 'Открой план.', 'actionIds': ['time']}
+        env = {
+            'ASSISTANT_PROVIDER': 'auto',
+            'DEEPSEEK_API_KEY': '',
+            'OPENROUTER_API_KEY': 'test-openrouter-key',
+            'OPENROUTER_MODEL': 'nvidia/nemotron-3-ultra-550b-a55b:free',
+            'OPENROUTER_BASE_URL': 'https://openrouter.test/api/v1',
+        }
+        with patch.dict('os.environ', env, clear=False), \
+                patch('assistant.urlopen', return_value=io.BytesIO(json.dumps(raw).encode())) as call:
+            result = ask_assistant('Найди время', {})
+        self.assertEqual(result['provider'], 'OpenRouter')
+        self.assertEqual(call.call_args.args[0].full_url, 'https://openrouter.test/api/v1/chat/completions')
+
+    def test_auto_falls_back_to_pollinations_when_openrouter_fails(self):
+        fallback = {'answer': 'Резервный ответ.', 'actionIds': []}
+        env = {
+            'ASSISTANT_PROVIDER': 'auto',
+            'DEEPSEEK_API_KEY': '',
+            'OPENROUTER_API_KEY': 'test-openrouter-key',
+            'OPENROUTER_BASE_URL': 'https://openrouter.test/api/v1',
+        }
+        with patch.dict('os.environ', env, clear=False), \
+                patch('assistant.urlopen', side_effect=[
+                    OSError('upstream down'), io.BytesIO(json.dumps(fallback).encode())
+                ]):
+            result = ask_assistant('hello', {})
+        self.assertEqual(result['provider'], 'Pollinations')
+        self.assertEqual(result['answer'], 'Резервный ответ.')
+
+    def test_openrouter_without_key_fails_with_clear_message(self):
+        env = {'ASSISTANT_PROVIDER': 'openrouter', 'OPENROUTER_API_KEY': ''}
+        with patch.dict('os.environ', env, clear=False):
+            with self.assertRaisesRegex(RuntimeError, 'OpenRouter не настроен'):
+                ask_assistant('hello', {})
+
+    def test_openrouter_base_url_must_be_https(self):
+        env = {
+            'ASSISTANT_PROVIDER': 'openrouter',
+            'OPENROUTER_API_KEY': 'test-key',
+            'OPENROUTER_BASE_URL': 'http://openrouter.test/api/v1',
+        }
+        with patch.dict('os.environ', env, clear=False):
+            with self.assertRaisesRegex(RuntimeError, 'https://'):
+                ask_assistant('hello', {})
+
     def test_deepseek_without_key_fails_with_clear_message(self):
         env = {'ASSISTANT_PROVIDER': 'deepseek', 'DEEPSEEK_API_KEY': ''}
         with patch.dict('os.environ', env, clear=False):

@@ -44,6 +44,14 @@ test('dock expands reactively and semester history is complete', async ({page}) 
   await expect(semesters.getByRole('button',{name:'1 семестр',exact:true})).toHaveAttribute('aria-pressed','true');
   const dock=page.locator('.assistant-dock');
   const before=await dock.boundingBox();
+  if (!before) {
+    await page.getByRole('button',{name:'Открыть панель помощника'}).click();
+    await expect(dock).toHaveClass(/is-expanded/);
+    await expect.poll(async()=>(await dock.boundingBox()).height).toBeGreaterThan(120);
+    await page.getByRole('button',{name:'Свернуть помощника',exact:true}).click();
+    await expect(dock).not.toHaveClass(/is-expanded/);
+    return;
+  }
   await page.getByLabel('Что решаем?').focus();
   await expect(dock).toHaveClass(/is-expanded/);
   await expect.poll(async()=>(await dock.boundingBox()).height).toBeGreaterThan(before.height+50);

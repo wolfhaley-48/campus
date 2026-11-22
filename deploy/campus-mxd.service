@@ -1,0 +1,21 @@
+[Unit]
+Description=Campus demo (Flask + Gunicorn)
+After=network-online.target mongod.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=campus
+Group=campus
+WorkingDirectory=/opt/campus/backend
+EnvironmentFile=/opt/campus/backend/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/campus/.venv/bin/gunicorn --workers 3 --threads 2 --bind 127.0.0.1:5000 --timeout 60 --access-logfile - --error-logfile - app:app
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ReadWritePaths=/opt/campus/backend
+
+[Install]
+WantedBy=multi-user.target

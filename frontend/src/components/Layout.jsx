@@ -1,4 +1,4 @@
-import { Suspense, useLayoutEffect, useRef } from "react";
+import { Suspense, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Bell, CalendarDays, FileText, GraduationCap, LayoutDashboard, Messages } from "../icons";
@@ -20,7 +20,7 @@ const NAV = [
   { to: "/social", label: "Социалка", icon: Messages },
 ];
 
-function AppHeader() {
+function AppHeader({ assistantOpen, onAssistantToggle }) {
   const { pathname } = useLocation();
   const { user, unread } = useAuth();
   const tabsRef = useRef(null);
@@ -66,6 +66,11 @@ function AppHeader() {
               </Link>;
             })}
           </nav>
+          <button type="button" className="header-assistant" onClick={onAssistantToggle}
+            aria-label={assistantOpen ? "Закрыть панель помощника" : "Открыть панель помощника"}
+            aria-expanded={assistantOpen} aria-controls="assistant-panel">
+            <span aria-hidden="true">ИИ</span>
+          </button>
           <Link to="/profile" className="header-profile" aria-label="Профиль" aria-current={pathname === "/profile" ? "page" : undefined}>
             <Avatar user={user} size="sm" eager />
           </Link>
@@ -88,20 +93,22 @@ function RouteStage() {
 export default function Layout() {
   const { user, loading } = useAuth();
   const location = useLocation();
+  const [assistantOpen, setAssistantOpen] = useState(false);
   useLayoutEffect(() => {
     // scrollTo can return a Promise; an effect must not return it as cleanup.
     window.scrollTo({ top: 0, behavior: "instant" });
     document.querySelector(".main-inner")?.scrollTo({ top: 0, behavior: "instant" });
+    setAssistantOpen(false);
   }, [location.pathname]);
   if (loading) return <FullscreenLoader />;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
 
   return <div className="shell" data-risk={user.academicRisk || undefined}>
     <a className="skip-link" href="#main-content">Перейти к содержимому</a>
-    <AppHeader />
+    <AppHeader assistantOpen={assistantOpen} onAssistantToggle={() => setAssistantOpen(value => !value)} />
     <main className="main-inner" id="main-content"><RouteStage /></main>
     <div className="dock-reserve" aria-hidden="true" />
-    <AssistantDock />
+    <AssistantDock expanded={assistantOpen} setExpanded={setAssistantOpen} />
     <footer className="app-footer"><span>Кампус · демо</span><span>Неофициальный сервис. Все данные вымышлены.</span></footer>
   </div>;
 }
