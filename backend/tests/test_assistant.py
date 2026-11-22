@@ -28,6 +28,38 @@ class AssistantTest(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, 'недоступен'):
                     ask_assistant('hello', {})
 
+    def test_protocol_fragments_in_answer_are_rejected(self):
+        # Observed in production: valid outer JSON, broken protocol inside answer.
+        answers = [
+            "Начни подготовку.','actionIds':['grades'],'tasks':[]}}{",
+            'Начни подготовку.","actionIds":["grades"],"tasks":[]}',
+            'План: {"tasks":[{"title":"Подготовиться","duration":45}]}',
+        ]
+        env = {'ASSISTANT_PROVIDER': 'pollinations'}
+        for answer in answers:
+            data = {'answer': answer, 'actionIds': [], 'tasks': []}
+            with self.subTest(answer=answer), patch.dict('os.environ', env, clear=False), \
+                    patch('assistant.urlopen', return_value=io.BytesIO(json.dumps(data).encode())):
+                with self.assertRaisesRegex(RuntimeError, 'недоступен'):
+                    ask_assistant('Помоги подготовиться', {})
+
+    def test_auto_falls_back_when_answer_contains_broken_protocol(self):
+        broken = {'answer': "Проверь оценки.','actionIds':['grades'],'tasks':[]}}{"}
+        fallback = {'answer': 'Проверь оценки.', 'actionIds': ['grades']}
+        env = {
+            'ASSISTANT_PROVIDER': 'auto', 'DEEPSEEK_API_KEY': '',
+            'OPENROUTER_API_KEY': 'test-openrouter-key',
+        }
+        with patch.dict('os.environ', env, clear=False), \
+                patch('assistant.urlopen', side_effect=[
+                    io.BytesIO(json.dumps(broken).encode()),
+                    io.BytesIO(json.dumps(fallback).encode()),
+                ]) as call:
+            result = ask_assistant('Помоги подготовиться', {})
+        self.assertEqual(call.call_count, 2)
+        self.assertEqual(result['provider'], 'Pollinations')
+        self.assertEqual(result['answer'], 'Проверь оценки.')
+
     def test_task_intents_are_validated(self):
         data = {'answer': 'План.', 'actionIds': [], 'tasks': [
             {'title': 'Презентация', 'duration': 45}, {'title': 'bad', 'duration': True}]}

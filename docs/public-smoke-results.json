@@ -1,0 +1,158 @@
+{
+  "checkedAt": "2026-11-22T16:36:50.198Z",
+  "baseURL": "https://campus.mxd.wtf",
+  "browser": "Chromium headless",
+  "apiChecks": [
+    "anonymous dashboard 401",
+    "anna cookie HttpOnly Secure SameSite=Lax",
+    "anna /auth/me 200",
+    "anna /schedule 200",
+    "anna /grades 200",
+    "anna /requests 200",
+    "anna /notifications 200",
+    "anna /plan 200",
+    "anna /social/threads 200",
+    "maksim cookie HttpOnly Secure SameSite=Lax",
+    "maksim /auth/me 200",
+    "maksim /schedule 200",
+    "maksim /grades 200",
+    "maksim /requests 200",
+    "maksim /notifications 200",
+    "maksim /plan 200",
+    "maksim /social/threads 200",
+    "anna foreign request 404",
+    "maksim foreign request 404"
+  ],
+  "apiCheckCount": 19,
+  "screenCount": 48,
+  "widths": [
+    360,
+    768,
+    1280
+  ],
+  "paths": [
+    "/",
+    "/grades",
+    "/notifications",
+    "/plan",
+    "/profile",
+    "/requests",
+    "/schedule",
+    "/social"
+  ],
+  "accountCount": 2,
+  "javascriptErrorCount": 0,
+  "horizontalOverflowCount": 0,
+  "visibleAssistantMinimumGapPx": 40,
+  "version": {
+    "index": {
+      "public": "64356a0c735bc4bf75adab1bb5ecb7920e16f40842d4ea359bf2f1a99455f294",
+      "local": "f2d5bf8568ff3885b4dabbd29b42275a960c71de951228c750bbe0240cdd05df",
+      "equal": false
+    },
+    "assets": [
+      {
+        "path": "/assets/index-DeckyxDK.js",
+        "equal": false,
+        "public": "7998e147a7732edf4784467176909f8476d088f0b00284293fc6e837b0d4cd5a",
+        "local": null
+      },
+      {
+        "path": "/assets/jsx-runtime-DyZJNswf.js",
+        "equal": true,
+        "public": "006c8c36904a2f42ac8e86d3e56badc6473450e8a3988d87f12c632a6487218b",
+        "local": "006c8c36904a2f42ac8e86d3e56badc6473450e8a3988d87f12c632a6487218b"
+      },
+      {
+        "path": "/assets/index-BwOQBdvd.css",
+        "equal": false,
+        "public": "04c7e2896271f988e123bcb485a645e74acf1ebde1eb8b6f7a0043b03e2286a1",
+        "local": null
+      }
+    ]
+  },
+  "assistant": {
+    "status": 200,
+    "provider": "OpenRouter",
+    "structuredPayloadLeakedIntoAnswer": true,
+    "fixPending": true,
+    "additionalChecks": [
+      {
+        "query": "Какие пары у меня завтра?",
+        "status": 200,
+        "provider": "OpenRouter",
+        "structuredPayloadLeakedIntoAnswer": false,
+        "actionCount": 1,
+        "taskCount": 1
+      },
+      {
+        "query": "Помоги подготовиться к сессии по моим оценкам.",
+        "status": 200,
+        "provider": "OpenRouter",
+        "structuredPayloadLeakedIntoAnswer": false,
+        "actionCount": 3,
+        "taskCount": 4
+      }
+    ],
+    "observedDefectsInThreeRequests": 1,
+    "localRegressionFix": "Protocol fragments in answer are rejected; auto provider can fall back. Verified 14 assistant unittest tests including 2 new regressions. Public deployment not changed by this check."
+  },
+  "screenshots": [
+    "docs/screenshots/final-public-home-mobile.png",
+    "docs/screenshots/final-public-schedule-mobile.png",
+    "docs/screenshots/final-public-social-mobile.png",
+    "docs/screenshots/final-public-home-desktop.png",
+    "docs/screenshots/final-public-schedule.png",
+    "docs/screenshots/final-public-requests.png",
+    "docs/screenshots/final-public-notifications.png",
+    "docs/screenshots/final-public-profile.png",
+    "docs/screenshots/final-public-plan.png",
+    "docs/screenshots/final-public-social.png",
+    "docs/screenshots/final-public-maksim-grades.png"
+  ],
+  "mutationLimits": "Created no requests, tasks, posts or messages. Auth logins, three assistant calls and automatic group-chat read marks on the initial /social screen sweep were allowed. Subsequent browser checks intercepted mutation requests including read marks.",
+  "syncedFrontendVerification": {
+    "baseCommit": "c7bb970",
+    "files": [
+      {
+        "path": "/",
+        "equal": true,
+        "sha256": "64356a0c735bc4bf75adab1bb5ecb7920e16f40842d4ea359bf2f1a99455f294"
+      },
+      {
+        "path": "/assets/index-DeckyxDK.js",
+        "equal": true,
+        "sha256": "7998e147a7732edf4784467176909f8476d088f0b00284293fc6e837b0d4cd5a"
+      },
+      {
+        "path": "/assets/jsx-runtime-DyZJNswf.js",
+        "equal": true,
+        "sha256": "006c8c36904a2f42ac8e86d3e56badc6473450e8a3988d87f12c632a6487218b"
+      },
+      {
+        "path": "/assets/index-BwOQBdvd.css",
+        "equal": true,
+        "sha256": "04c7e2896271f988e123bcb485a645e74acf1ebde1eb8b6f7a0043b03e2286a1"
+      }
+    ],
+    "allEqual": true
+  },
+  "mobileAssistant": {
+    "width": 360,
+    "openVisible": true,
+    "inputAutoFocused": false,
+    "inputManuallyFocusable": true,
+    "sendEnabled": true,
+    "sendInsideViewport": true,
+    "closeHidden": true,
+    "focusReturned": false,
+    "sendGeometry": {
+      "left": 292,
+      "right": 334,
+      "top": 653,
+      "bottom": 695,
+      "viewportWidth": 360,
+      "viewportHeight": 800
+    }
+  }
+}

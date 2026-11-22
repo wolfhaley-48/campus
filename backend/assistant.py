@@ -167,6 +167,9 @@ def _normalize(result, label):
     answer = result.get('answer')
     if not isinstance(answer, str) or not answer.strip() or len(answer) > 8000:
         raise ValueError('Invalid answer')
+    # Some providers put broken response fields inside otherwise valid answer JSON.
+    if re.search(r'''["'](?:actionIds|tasks)["']\s*:''', answer):
+        raise ValueError('Protocol fields inside answer')
     ids = result.get('actionIds', [])
     if not isinstance(ids, list) or any(not isinstance(item, str) for item in ids):
         raise ValueError('Invalid actions')

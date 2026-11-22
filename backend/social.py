@@ -89,6 +89,7 @@ def serialize(db, doc):
         "createdAt": doc["created_at"].isoformat(),
         "scope": doc.get("scope"),
         "demo": bool(doc.get("demo_key")),
+        **({"likes": len(doc.get("likes", [])), "liked": g.user["_id"] in doc.get("likes", []), "comments": db.social_comments.count_documents({"post_id": doc["_id"]})} if "scope" in doc else {}),
     }
 
 
@@ -153,6 +154,61 @@ def publish():
     }
     doc["_id"] = db.social_posts.insert_one(doc).inserted_id
     return jsonify(item=serialize(db, doc)), 201
+
+
+def visible_post(db, post_id):
+    post = db.social_posts.find_one({"_id": oid(post_id), "$or": [{"scope": "all"}, {"scope": "group", "group": g.user["group"]}]})
+    if not post:
+        raise NotFound()
+    return post
+
+
+@social.post("/feed/<post_id>/like")
+@login_required
+def like_post(post_id):
+    db = get_db()
+    post = visible_post(db, post_id)
+    liked = body().get("liked")
+    if not isinstance(liked, bool):
+        raise BadRequest("Укажи состояние лайка")
+    db.social_posts.update_one({"_id": post["_id"]}, {"$addToSet" if liked else "$pull": {"likes": g.user["_id"]}})
+    return jsonify(item=serialize(db, db.social_posts.find_one({"_id": post["_id"]})))
+
+
+@social.get("/feed/<post_id>/comments")
+@login_required
+def get_comments(post_id):
+    db = get_db()
+    post = visible_post(db, post_id)
+    before = request.args.get("before")
+    query = {"post_id": post["_id"]}
+    if before:
+        query["_id"] = {"$lt": oid(before)}
+    docs = list(db.social_comments.find(query).sort("_id", -1).limit(21))
+    items = docs[:20]
+    return jsonify(items=[serialize(db, doc) for doc in reversed(items)], hasMore=len(docs)>20, nextCursor=str(items[-1]["_id"]) if len(docs)>20 else None)
+
+
+@social.post("/feed/<post_id>/comments")
+@login_required
+def add_comment(post_id):
+    db = get_db()
+    post = visible_post(db, post_id)
+    data = body()
+    text, client_id = data.get("body"), data.get("clientId")
+    if not isinstance(text, str) or not text.strip() or len(text)>1000:
+        raise BadRequest("Напиши комментарий до 1000 символов")
+    try:
+        UUID(client_id)
+    except (ValueError, TypeError, AttributeError):
+        raise BadRequest("Не удалось определить отправку")
+    key = {"post_id": post["_id"], "author_id": g.user["_id"], "client_id": client_id}
+    doc = {**key, "body": text.strip(), "created_at": datetime.now(timezone.utc)}
+    try:
+        doc["_id"] = db.social_comments.insert_one(doc).inserted_id
+    except DuplicateKeyError:
+        doc = db.social_comments.find_one(key)
+    return jsonify(item=serialize(db, doc), count=db.social_comments.count_documents({"post_id": post["_id"]})), 201
 
 
 @social.get("/threads")

@@ -1,4 +1,5 @@
 import { Suspense, useLayoutEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Bell, CalendarDays, FileText, GraduationCap, LayoutDashboard, Messages } from "../icons";
@@ -6,7 +7,7 @@ import { Link, useNativeNavigation } from "../navigation";
 import { useAuth } from "../auth";
 import { AssistantDock } from "./AssistantDock";
 import { Avatar } from "./Avatar";
-import { LogoMark } from "./Logo";
+import { CubeMark, LogoMark } from "./Logo";
 import { FullscreenLoader, PageSkeleton } from "./States";
 import { AnimatedCount } from "./Motion";
 import { CONTENT_TRANSITION } from "../motion";
@@ -20,7 +21,7 @@ const NAV = [
   { to: "/social", label: "Социалка", icon: Messages },
 ];
 
-function AppHeader({ assistantOpen, onAssistantToggle }) {
+function AppHeader() {
   const { pathname } = useLocation();
   const { user, unread } = useAuth();
   const tabsRef = useRef(null);
@@ -66,11 +67,6 @@ function AppHeader({ assistantOpen, onAssistantToggle }) {
               </Link>;
             })}
           </nav>
-          <button type="button" className="header-assistant" onClick={onAssistantToggle}
-            aria-label={assistantOpen ? "Закрыть панель помощника" : "Открыть панель помощника"}
-            aria-expanded={assistantOpen} aria-controls="assistant-panel">
-            <span aria-hidden="true">ИИ</span>
-          </button>
           <Link to="/profile" className="header-profile" aria-label="Профиль" aria-current={pathname === "/profile" ? "page" : undefined}>
             <Avatar user={user} size="sm" eager />
           </Link>
@@ -94,6 +90,18 @@ export default function Layout() {
   const { user, loading } = useAuth();
   const location = useLocation();
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const assistantInput = useRef(null);
+  const assistantTrigger = useRef(null);
+  const toggleAssistant = () => {
+    if (assistantOpen) {
+      setAssistantOpen(false);
+      assistantTrigger.current?.focus();
+    } else {
+      // Reveal the dock before focusing, within the opening gesture.
+      flushSync(() => setAssistantOpen(true));
+      assistantInput.current?.focus();
+    }
+  };
   useLayoutEffect(() => {
     // scrollTo can return a Promise; an effect must not return it as cleanup.
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -105,10 +113,15 @@ export default function Layout() {
 
   return <div className="shell" data-risk={user.academicRisk || undefined}>
     <a className="skip-link" href="#main-content">Перейти к содержимому</a>
-    <AppHeader assistantOpen={assistantOpen} onAssistantToggle={() => setAssistantOpen(value => !value)} />
+    <AppHeader />
     <main className="main-inner" id="main-content"><RouteStage /></main>
     <div className="dock-reserve" aria-hidden="true" />
-    <AssistantDock expanded={assistantOpen} setExpanded={setAssistantOpen} />
+    <button ref={assistantTrigger} type="button" className="brand-mark assistant-launcher"
+      hidden={assistantOpen} onClick={toggleAssistant} aria-label="Открыть панель помощника"
+      aria-expanded={assistantOpen} aria-controls="assistant-panel">
+      <CubeMark size={56} />
+    </button>
+    <AssistantDock expanded={assistantOpen} setExpanded={setAssistantOpen} input={assistantInput} launcher={assistantTrigger} />
     <footer className="app-footer"><span>Кампус · демо</span><span>Неофициальный сервис. Все данные вымышлены.</span></footer>
   </div>;
 }

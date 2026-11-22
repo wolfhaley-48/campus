@@ -1,0 +1,63 @@
+{
+  "checkedAt": "2026-11-22T16:51:52.707379+00:00",
+  "url": "https://campus.mxd.wtf",
+  "service": "Check-Host HTTP probe",
+  "request": {
+    "nodes": {
+      "ru1.node.check-host.net": [
+        "ru",
+        "Russia",
+        "Moscow",
+        "185.130.104.238",
+        "AS14576"
+      ],
+      "ru2.node.check-host.net": [
+        "ru",
+        "Russia",
+        "Moscow",
+        "194.26.229.20",
+        "AS210644"
+      ],
+      "ru3.node.check-host.net": [
+        "ru",
+        "Russia",
+        "Saint Petersburg",
+        "95.215.108.62",
+        "AS207713"
+      ]
+    },
+    "ok": 1,
+    "permanent_link": "https://check-host.net/check-report/59d8a456kd57",
+    "request_id": "59d8a456kd57"
+  },
+  "results": {
+    "ru1.node.check-host.net": [
+      [
+        1,
+        0.159864902496338,
+        "OK",
+        "200",
+        "48.102.138.148"
+      ]
+    ],
+    "ru2.node.check-host.net": [
+      [
+        1,
+        0.13193416595459,
+        "OK",
+        "200",
+        "48.102.138.148"
+      ]
+    ],
+    "ru3.node.check-host.net": [
+      [
+        1,
+        0.106251001358032,
+        "OK",
+        "200",
+        "48.102.138.148"
+      ]
+    ]
+  },
+  "limits": "HTTP probes from three datacenter nodes in Russia; not a guarantee for every ISP or future uptime."
+}

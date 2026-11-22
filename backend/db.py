@@ -21,6 +21,8 @@ def init_db(app):
     db.plan_tasks.create_index([("user_id", ASCENDING), ("date", ASCENDING), ("slot_ticks", ASCENDING)],
                                unique=True, partialFilterExpression={"slot_ticks": {"$exists": True}})
     db.plan_tasks.create_index([("user_id", ASCENDING), ("date", ASCENDING)])
+    db.social_comments.create_index([("post_id", ASCENDING), ("_id", ASCENDING)])
+    db.social_comments.create_index([("post_id", ASCENDING), ("author_id", ASCENDING), ("client_id", ASCENDING)], unique=True)
     db.social_posts.create_index('demo_key', unique=True, sparse=True)
     db.social_posts.create_index([('scope',ASCENDING),('group',ASCENDING),('_id',ASCENDING)])
     db.social_messages.create_index([('channel',ASCENDING),('_id',ASCENDING)])

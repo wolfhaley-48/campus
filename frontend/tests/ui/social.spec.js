@@ -104,19 +104,18 @@ test("wall pages keep unique posts and bound the rendered window", async ({
   expect(new Set(ids).size).toBe(ids.length);
 });
 
-test("content ends above the assistant and all social navigation stays visible", async ({
+test("content ends above the assistant launcher and all social navigation stays visible", async ({
   page,
 }) => {
   await page.goto("/");
   await page.getByRole("heading", { name: /что в планах/ }).waitFor();
   const main = await page.locator(".main-inner").boundingBox(),
-    dock = await page.locator(".assistant-dock").boundingBox();
+    launcher = await page.locator(".assistant-launcher").boundingBox();
   const link = page
     .getByRole("navigation", { name: "Основная навигация" })
     .getByRole("link", { name: "Социалка", exact: true });
   await expect(link).toBeVisible();
-  if (dock) expect(main.y + main.height).toBeLessThanOrEqual(dock.y + 1);
-  else expect(main.y + main.height).toBeLessThanOrEqual((await link.boundingBox()).y + 1);
+  expect(main.y + main.height).toBeLessThanOrEqual(launcher.y + 1);
   const box = await link.boundingBox();
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize().width);

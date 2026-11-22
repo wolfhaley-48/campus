@@ -51,7 +51,7 @@ def main():
     client = MongoClient(Config.MONGO_URI, tz_aware=True, serverSelectionTimeoutMS=5000)
     db = client[Config.DB_NAME]
 
-    for name in ["users", "schedule", "grades", "requests", "notifications", "counters", "plan_tasks", "social_posts", "social_messages", "social_reads"]:
+    for name in ["users", "schedule", "grades", "requests", "notifications", "counters", "plan_tasks", "social_posts", "social_comments", "social_messages", "social_reads"]:
         db[name].delete_many({})
 
     anna_id = db.users.insert_one(

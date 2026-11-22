@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Link } from "../navigation";
 import { api } from "../api";
@@ -7,13 +8,16 @@ import { CONTROL_SPRING } from "../motion";
 
 const INTENTS = ["Найди 45 минут на подготовку", "Что изменилось в расписании?", "Как получить справку?", "Что с моей учёбой?"];
 
-export function AssistantDock({ expanded, setExpanded }) {
+export function AssistantDock({ expanded, setExpanded, input, launcher }) {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState(null);
   const [failure, setFailure] = useState("");
   const [busy, setBusy] = useState(false);
-  const input = useRef(null);
   const dock = useRef(null);
+  const closePanel = () => {
+    flushSync(() => setExpanded(false));
+    launcher.current?.focus();
+  };
   useEffect(() => {
     const viewport = window.visualViewport;
     const update = () => {
@@ -34,9 +38,15 @@ export function AssistantDock({ expanded, setExpanded }) {
     catch (error) { setFailure(error.message); }
     finally { setBusy(false); }
   };
-  return <motion.aside ref={dock} layout className={`assistant-dock${expanded ? " is-expanded" : ""}`} transition={transition} aria-label="Помощник Кампуса">
+  return <motion.aside ref={dock} layout className={`assistant-dock${expanded ? " is-expanded" : ""}`} transition={transition} aria-label="Помощник Кампуса" onKeyDown={event => {
+    if (event.key === "Escape" && expanded) {
+      event.preventDefault();
+      event.stopPropagation();
+      closePanel();
+    }
+  }}>
     <AnimatePresence initial={false}>{expanded && <motion.div key="panel" className="dock-panel" id="assistant-panel" initial={reduced ? false : { opacity: 0, y: 12 }} animate={{opacity:1,y:0}} exit={{opacity:0,y:reduced ? 0 : 8}} transition={{duration:reduced ? 0 : .16}}>
-      <header><b>Разберёмся вместе</b><button type="button" className="icon-btn" aria-label="Свернуть помощника" onClick={()=>setExpanded(false)}><X size={18}/></button></header>
+      <header><b>Разберёмся вместе</b><button type="button" className="icon-btn" aria-label="Свернуть помощника" onClick={closePanel}><X size={18}/></button></header>
       <div className="dock-scroll">
         {busy && <p role="status">Сопоставляю расписание, сроки и личный план…</p>}
         {failure && <div role="alert" className="dock-error"><b>Ответ не получен</b><p>{failure}</p><Link to="/plan" onClick={()=>setExpanded(false)}>Найти время самостоятельно</Link></div>}
@@ -45,9 +55,9 @@ export function AssistantDock({ expanded, setExpanded }) {
       </div>
     </motion.div>}</AnimatePresence>
     <form onSubmit={submit} className="dock-compose">
-      <button type="button" className="dock-toggle" onClick={()=>{setExpanded(value=>!value); if(!expanded)input.current?.focus();}} aria-expanded={expanded} aria-controls="assistant-panel" aria-label={expanded ? "Свернуть панель помощника" : "Открыть панель помощника"}>к.</button>
+      <button type="button" className="dock-toggle" onClick={closePanel} aria-expanded={expanded} aria-controls="assistant-panel" aria-label="Свернуть панель помощника">к.</button>
       <label className="sr-only" htmlFor="student-query">Что решаем?</label>
-      <textarea ref={input} id="student-query" rows={expanded ? Math.min(4, Math.max(2, query.split("\n").length)) : 1} maxLength={1200} disabled={busy} value={query} onFocus={()=>setExpanded(true)} onChange={event=>setQuery(event.target.value)} placeholder="Что хочешь успеть?" onKeyDown={event=>{if(event.key==='Escape'){setExpanded(false);input.current?.blur();} if(event.key==='Enter'&&!event.shiftKey&&!event.nativeEvent.isComposing){event.preventDefault();submit(event);}}}/>
+      <textarea ref={input} id="student-query" rows={expanded ? Math.min(4, Math.max(2, query.split("\n").length)) : 1} maxLength={1200} disabled={busy} value={query} onFocus={()=>setExpanded(true)} onChange={event=>setQuery(event.target.value)} placeholder="Что хочешь успеть?" onKeyDown={event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.nativeEvent.isComposing){event.preventDefault();submit(event);}}}/>
       <button type="submit" className="dock-send" disabled={busy||!query.trim()} aria-label="Составить план с ИИ">{busy ? "…" : <ArrowRight size={22}/>}</button>
     </form>
   </motion.aside>;

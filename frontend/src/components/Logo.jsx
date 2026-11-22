@@ -50,9 +50,15 @@ export function LogoMark({ size = 38 }) {
   const label = reduced ? "Логотип Кампуса, движение отключено" : paused ? "Включить вращение логотипа" : "Остановить вращение логотипа";
   return <button type="button" className="brand-mark" style={{ width: size, height: size }}
     onClick={() => setPaused(value => !value)} disabled={!!reduced} aria-label={label} title={label} data-paused={paused || reduced || undefined}>
-    <Cube size={size} paused={paused || !!reduced} />
-    <svg className="brand-initial" viewBox="0 0 64 64" aria-hidden="true"><path d="M20 47V17h9v11.4L41.4 17H52L37.4 32.2 52.8 47H41.3L29 35.1V47z" fill="currentColor" /></svg>
+    <CubeMark size={size} paused={paused || !!reduced} />
   </button>;
+}
+
+export function CubeMark({ size = 38, paused = true }) {
+  return <>
+    <Cube size={size} paused={paused} />
+    <svg className="brand-initial" viewBox="0 0 64 64" aria-hidden="true"><path d="M20 47V17h9v11.4L41.4 17H52L37.4 32.2 52.8 47H41.3L29 35.1V47z" fill="currentColor" /></svg>
+  </>;
 }
 
 export function Brand({ href = "/", subtitle = true }) {

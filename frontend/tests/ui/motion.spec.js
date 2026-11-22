@@ -182,8 +182,8 @@ test("reduced motion also disables local selection and disclosure movement", asy
 
 test("solid cube rotates behind one fixed initial, pauses and respects reduced motion", async ({ page }) => {
   await page.goto("/");
-  const cube = page.locator(".brand-cube");
-  const initial = page.locator(".brand-initial");
+  const cube = page.locator(".header-brand .brand-cube");
+  const initial = page.locator(".header-brand .brand-initial");
   await expect(cube).toBeVisible();
   await expect(initial).toHaveCount(1);
   const image = () => cube.evaluate(el => el.toDataURL());
