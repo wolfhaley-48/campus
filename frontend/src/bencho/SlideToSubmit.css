@@ -9,7 +9,7 @@
   position: relative;
   width: 100%;
   height: 56px;
-  border-radius: 999px;
+  border-radius: 0;
   background: var(--accent-softer);
   border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
   overflow: hidden;
@@ -23,7 +23,7 @@
   left: 4px;
   top: 4px;
   bottom: 4px;
-  border-radius: 999px;
+  border-radius: 0;
   background: var(--accent);
   pointer-events: none;
 }
@@ -49,7 +49,7 @@
   height: 48px;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
