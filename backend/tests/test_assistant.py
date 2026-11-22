@@ -49,6 +49,7 @@ class AssistantTest(unittest.TestCase):
         env = {
             'ASSISTANT_PROVIDER': 'auto', 'DEEPSEEK_API_KEY': '',
             'OPENROUTER_API_KEY': 'test-openrouter-key',
+            'OPENROUTER_MODELS': 'nvidia/nemotron-3-ultra-550b-a55b:free',
         }
         with patch.dict('os.environ', env, clear=False), \
                 patch('assistant.urlopen', side_effect=[
@@ -115,7 +116,9 @@ class AssistantTest(unittest.TestCase):
         self.assertEqual(payload['model'], 'nvidia/nemotron-3-ultra-550b-a55b:free')
         self.assertEqual(payload['response_format'], {'type': 'json_object'})
         self.assertEqual(payload['max_tokens'], 4096)
+        self.assertEqual(payload['reasoning'], {'effort': 'low'})
         self.assertEqual(result['provider'], 'OpenRouter')
+        self.assertEqual(result['model'], 'nvidia/nemotron-3-ultra-550b-a55b:free')
         self.assertEqual(result['actions'], [{'label': 'Проверить расписание', 'href': '/schedule'}])
 
     def test_auto_prefers_openrouter_when_deepseek_key_is_absent(self):
@@ -131,23 +134,70 @@ class AssistantTest(unittest.TestCase):
                 patch('assistant.urlopen', return_value=io.BytesIO(json.dumps(raw).encode())) as call:
             result = ask_assistant('Найди время', {})
         self.assertEqual(result['provider'], 'OpenRouter')
+        self.assertEqual(result['model'], 'nvidia/nemotron-3-ultra-550b-a55b:free')
         self.assertEqual(call.call_args.args[0].full_url, 'https://openrouter.test/api/v1/chat/completions')
 
-    def test_auto_falls_back_to_pollinations_when_openrouter_fails(self):
+    def test_openrouter_tries_models_in_configured_order(self):
+        first = 'baidu/ernie-5.5-flash-preview:free'
+        second = 'nvidia/nemotron-3.5-lightning:free'
+        raw = {'answer': 'Ответ второй модели.', 'actionIds': []}
+        env = {
+            'ASSISTANT_PROVIDER': 'openrouter',
+            'OPENROUTER_API_KEY': 'test-openrouter-key',
+            'OPENROUTER_MODELS': f'{first},{second}',
+            'OPENROUTER_BASE_URL': 'https://openrouter.test/api/v1',
+        }
+        with patch.dict('os.environ', env, clear=False), \
+                patch('assistant.urlopen', side_effect=[
+                    OSError('rate limited'), io.BytesIO(json.dumps(raw).encode())
+                ]) as call:
+            result = ask_assistant('hello', {})
+        models = [json.loads(item.args[0].data)['model'] for item in call.call_args_list]
+        self.assertEqual(models, [first, second])
+        self.assertEqual(result['provider'], 'OpenRouter')
+        self.assertEqual(result['model'], second)
+
+    def test_openrouter_chain_skips_invalid_answer(self):
+        first = 'baidu/ernie-5.5-flash-preview:free'
+        second = 'nvidia/nemotron-3.5-lightning:free'
+        broken = {'answer': "Ответ.','actionIds':['grades']}", 'actionIds': []}
+        valid = {'answer': 'Ответ второй модели.', 'actionIds': ['grades']}
+        env = {
+            'ASSISTANT_PROVIDER': 'openrouter',
+            'OPENROUTER_API_KEY': 'test-openrouter-key',
+            'OPENROUTER_MODELS': f'{first},{second}',
+            'OPENROUTER_BASE_URL': 'https://openrouter.test/api/v1',
+        }
+        with patch.dict('os.environ', env, clear=False), \
+                patch('assistant.urlopen', side_effect=[
+                    io.BytesIO(json.dumps(broken).encode()),
+                    io.BytesIO(json.dumps(valid).encode()),
+                ]) as call:
+            result = ask_assistant('hello', {})
+        models = [json.loads(item.args[0].data)['model'] for item in call.call_args_list]
+        self.assertEqual(models, [first, second])
+        self.assertEqual(result['provider'], 'OpenRouter')
+        self.assertEqual(result['model'], second)
+        self.assertEqual(result['answer'], 'Ответ второй модели.')
+
+    def test_auto_falls_back_to_pollinations_after_openrouter_chain_fails(self):
         fallback = {'answer': 'Резервный ответ.', 'actionIds': []}
         env = {
             'ASSISTANT_PROVIDER': 'auto',
             'DEEPSEEK_API_KEY': '',
             'OPENROUTER_API_KEY': 'test-openrouter-key',
+            'OPENROUTER_MODELS': 'baidu/ernie-5.5-flash-preview:free,nvidia/nemotron-3.5-lightning:free',
             'OPENROUTER_BASE_URL': 'https://openrouter.test/api/v1',
         }
         with patch.dict('os.environ', env, clear=False), \
                 patch('assistant.urlopen', side_effect=[
-                    OSError('upstream down'), io.BytesIO(json.dumps(fallback).encode())
-                ]):
+                    OSError('upstream down'), OSError('upstream down'),
+                    io.BytesIO(json.dumps(fallback).encode())
+                ]) as call:
             result = ask_assistant('hello', {})
         self.assertEqual(result['provider'], 'Pollinations')
         self.assertEqual(result['answer'], 'Резервный ответ.')
+        self.assertEqual(call.call_count, 3)
 
     def test_openrouter_without_key_fails_with_clear_message(self):
         env = {'ASSISTANT_PROVIDER': 'openrouter', 'OPENROUTER_API_KEY': ''}

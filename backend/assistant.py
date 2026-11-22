@@ -1,11 +1,20 @@
 import json
 import os
 import re
+import time
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
 from planner import plan_payload
 from services import dashboard_payload, grades_payload, notifications_payload
+
+DEFAULT_OPENROUTER_MODELS = (
+    'baidu/ernie-5.5-flash-preview:free',
+    'nvidia/nemotron-3.5-lightning:free',
+    'nvidia/nemotron-3-ultra-550b-a55b:free',
+    'openrouter/free',
+)
+OPENROUTER_MODEL_RE = re.compile(r'[a-zA-Z0-9._:/-]+')
 
 ACTIONS = {
     'time': {'label': 'Выбрать время и сохранить задачу', 'href': '/plan'},
@@ -41,11 +50,20 @@ def student_context(db, user):
     }
 
 
-def _read_json(response, limit=2_000_000):
-    raw = response.read(limit + 1)
-    if len(raw) > limit:
-        raise ValueError('Слишком большой ответ провайдера')
-    return json.loads(raw)
+def _read_json(response, limit=2_000_000, deadline=None):
+    chunks = []
+    total = 0
+    while True:
+        if deadline is not None and time.monotonic() >= deadline:
+            raise TimeoutError('Провайдер не успел ответить')
+        chunk = response.read(min(65536, limit + 1 - total))
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > limit:
+            raise ValueError('Слишком большой ответ провайдера')
+        chunks.append(chunk)
+    return json.loads(b''.join(chunks))
 
 
 def _content(raw):
@@ -95,16 +113,25 @@ def _deepseek_answer(query, context):
         },
     )
     with urlopen(request, timeout=35) as response:
-        return _content(_read_json(response)), 'DeepSeek'
+        return _content(_read_json(response)), 'DeepSeek', model
 
 
-def _openrouter_answer(query, context):
+def _openrouter_models():
+    raw = os.getenv('OPENROUTER_MODELS', '').strip()
+    if raw:
+        models = [model.strip() for model in raw.split(',') if model.strip()]
+    else:
+        single = os.getenv('OPENROUTER_MODEL', '').strip()
+        models = [single] if single else list(DEFAULT_OPENROUTER_MODELS)
+    if not models or any(not OPENROUTER_MODEL_RE.fullmatch(model) for model in models):
+        raise RuntimeError('Неверная настройка моделей OpenRouter.')
+    return list(dict.fromkeys(models))
+
+
+def _openrouter_answer(query, context, model, deadline):
     key = os.getenv('OPENROUTER_API_KEY', '').strip()
     if not key:
         raise RuntimeError('OpenRouter не настроен: добавьте OPENROUTER_API_KEY на сервере.')
-    model = os.getenv('OPENROUTER_MODEL', 'nvidia/nemotron-3-ultra-550b-a55b:free').strip()
-    if not re.fullmatch(r'[a-zA-Z0-9._:/-]+', model):
-        raise RuntimeError('Неверная настройка модели OpenRouter.')
     base_url = os.getenv('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1').rstrip('/')
     parsed = urlparse(base_url)
     if parsed.scheme != 'https' or not parsed.netloc:
@@ -118,6 +145,9 @@ def _openrouter_answer(query, context):
         'response_format': {'type': 'json_object'},
         'temperature': 0.2,
         'max_tokens': 4096,
+        # Free reasoning models otherwise spend the whole completion budget
+        # on hidden reasoning and return an empty content.
+        'reasoning': {'effort': 'low'},
         'messages': [
             {'role': 'system', 'content': SYSTEM_PROMPT},
             {'role': 'user', 'content': json.dumps(
@@ -135,8 +165,42 @@ def _openrouter_answer(query, context):
             'X-Title': app_name,
         },
     )
-    with urlopen(request, timeout=45) as response:
-        return _content(_read_json(response)), 'OpenRouter'
+    remaining = max(1.0, deadline - time.monotonic())
+    with urlopen(request, timeout=min(15.0, remaining)) as response:
+        raw = _read_json(response, deadline=deadline)
+    actual_model = raw.get('model') if isinstance(raw, dict) else None
+    if not isinstance(actual_model, str) or not actual_model:
+        actual_model = model
+    return _content(raw), 'OpenRouter', actual_model
+
+
+def _openrouter_chain(query, context):
+    try:
+        attempt_timeout = float(os.getenv('OPENROUTER_ATTEMPT_TIMEOUT', '30'))
+        total_timeout = float(os.getenv('OPENROUTER_TOTAL_TIMEOUT', '70'))
+    except ValueError:
+        raise RuntimeError('Неверная настройка таймаутов OpenRouter.') from None
+    if attempt_timeout <= 0 or total_timeout <= 0:
+        raise RuntimeError('Неверная настройка таймаутов OpenRouter.')
+    models = _openrouter_models()
+    deadline = time.monotonic() + total_timeout
+    last_error = None
+    for model in models:
+        remaining = deadline - time.monotonic()
+        if remaining <= 1:
+            break
+        attempt_deadline = time.monotonic() + min(attempt_timeout, remaining)
+        try:
+            result = _openrouter_answer(query, context, model, attempt_deadline)
+            _normalize(*result)
+            return result
+        except RuntimeError:
+            raise
+        except (OSError, ValueError, KeyError, IndexError, TypeError) as error:
+            last_error = error
+    if last_error is not None:
+        raise RuntimeError('Модели OpenRouter не ответили.') from last_error
+    raise RuntimeError('Модели OpenRouter не ответили.')
 
 
 def _pollinations_answer(query, context):
@@ -157,11 +221,11 @@ def _pollinations_answer(query, context):
         data=json.dumps(payload).encode(),
         headers={'Content-Type': 'application/json'},
     )
-    with urlopen(request, timeout=35) as response:
-        return _content(_read_json(response)), 'Pollinations'
+    with urlopen(request, timeout=25) as response:
+        return _content(_read_json(response)), 'Pollinations', model
 
 
-def _normalize(result, label):
+def _normalize(result, label, model=None):
     if not isinstance(result, dict):
         raise ValueError('Expected an object')
     answer = result.get('answer')
@@ -183,40 +247,39 @@ def _normalize(result, label):
                     and task['duration'] in (30, 45, 60, 90)):
                 tasks.append({'title': task['title'].strip(), 'duration': task['duration'],
                               'href': '/plan?' + urlencode({'task': task['title'].strip(), 'duration': task['duration']})})
-    return {'answer': answer, 'actions': actions, 'tasks': tasks, 'provider': label}
+    response = {'answer': answer, 'actions': actions, 'tasks': tasks, 'provider': label}
+    if model:
+        response['model'] = model
+    return response
 
 
-def _selected_provider(provider):
+def _provider_attempts(provider):
     if provider == 'deepseek':
-        return _deepseek_answer
+        return [_deepseek_answer]
     if provider == 'openrouter':
-        return _openrouter_answer
+        return [_openrouter_chain]
     if provider == 'pollinations':
-        return _pollinations_answer
-    if os.getenv('DEEPSEEK_API_KEY', '').strip():
-        return _deepseek_answer
+        return [_pollinations_answer]
     if os.getenv('OPENROUTER_API_KEY', '').strip():
-        return _openrouter_answer
-    return _pollinations_answer
+        return [_openrouter_chain, _pollinations_answer]
+    if os.getenv('DEEPSEEK_API_KEY', '').strip():
+        return [_deepseek_answer, _pollinations_answer]
+    return [_pollinations_answer]
 
 
 def ask_assistant(query, context):
     provider = os.getenv('ASSISTANT_PROVIDER', 'auto').strip().lower()
     if provider not in {'auto', 'deepseek', 'openrouter', 'pollinations'}:
         raise RuntimeError('Неверная настройка провайдера помощника.')
-    selected = _selected_provider(provider)
-    try:
-        return _normalize(*selected(query, context))
-    except (RuntimeError, OSError, ValueError, KeyError, IndexError, TypeError) as first:
-        if provider != 'auto' or selected is _pollinations_answer:
-            if isinstance(first, RuntimeError):
-                raise
-            raise RuntimeError(
-                'Помощник сейчас недоступен. Попробуй позже; расписание и личный план работают независимо.'
-            ) from None
+    attempts = _provider_attempts(provider)
+    first_error = None
+    for attempt in attempts:
         try:
-            return _normalize(*_pollinations_answer(query, context))
-        except (RuntimeError, OSError, ValueError, KeyError, IndexError, TypeError):
-            raise RuntimeError(
-                'Помощник сейчас недоступен. Попробуй позже; расписание и личный план работают независимо.'
-            ) from None
+            return _normalize(*attempt(query, context))
+        except (RuntimeError, OSError, ValueError, KeyError, IndexError, TypeError) as error:
+            first_error = first_error or error
+    if provider != 'auto' and isinstance(first_error, RuntimeError):
+        raise first_error
+    raise RuntimeError(
+        'Помощник сейчас недоступен. Попробуй позже; расписание и личный план работают независимо.'
+    ) from None

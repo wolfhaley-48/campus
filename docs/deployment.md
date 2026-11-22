@@ -122,7 +122,9 @@ ASSISTANT_PROVIDER=auto
 DEEPSEEK_MODEL=deepseek-chat
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 # DEEPSEEK_API_KEY=<ключ>
-OPENROUTER_MODEL=nvidia/nemotron-3-ultra-550b-a55b:free
+OPENROUTER_MODELS=baidu/ernie-5.5-flash-preview:free,nvidia/nemotron-3.5-lightning:free,nvidia/nemotron-3-ultra-550b-a55b:free,openrouter/free
+OPENROUTER_ATTEMPT_TIMEOUT=30
+OPENROUTER_TOTAL_TIMEOUT=70
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 OPENROUTER_SITE_URL=https://campus.mxd.wtf
 OPENROUTER_APP_NAME=Campus demo
@@ -134,11 +136,11 @@ ASSISTANT_MODEL=openai
 
 ## DeepSeek, OpenRouter и Pollinations
 
-`ASSISTANT_PROVIDER=auto` выбирает DeepSeek при заданном `DEEPSEEK_API_KEY`, затем OpenRouter при заданном `OPENROUTER_API_KEY`, иначе Pollinations. Принудительный `deepseek` или `openrouter` без ключа возвращает 503 с понятным сообщением.
+`ASSISTANT_PROVIDER=auto` при заданном `OPENROUTER_API_KEY` проходит цепочку `OPENROUTER_MODELS`, затем пробует Pollinations. Если OpenRouter не настроен, но есть `DEEPSEEK_API_KEY`, используется DeepSeek, затем Pollinations. Принудительный `deepseek`, `openrouter` или `pollinations` без ключа возвращает 503 с понятным сообщением.
 
-Основная копия использует OpenRouter с бесплатной моделью `nvidia/nemotron-3-ultra-550b-a55b:free`. Живой ответ проверен 22 ноября 2026 и вернул `provider: OpenRouter`; ключ хранится только в `/opt/campus/backend/.env`, не в Git и не во фронтенде. Запрос идёт с сервера и содержит только данные текущего вымышленного студента; личные сообщения не передаются.
+Основная копия использует цепочку бесплатных моделей OpenRouter: `baidu/ernie-5.5-flash-preview:free` → `nvidia/nemotron-3.5-lightning:free` → `nvidia/nemotron-3-ultra-550b-a55b:free` → `openrouter/free`. Живой ответ проверен 22 ноября 2026 и вернул `provider: OpenRouter` с полем `model`; ключ хранится только в `/opt/campus/backend/.env`, не в Git и не во фронтенде. Запрос идёт с сервера и содержит только данные текущего вымышленного студента; личные сообщения не передаются.
 
-Для этой reasoning-модели задан `max_tokens=4096`. При меньшем лимите JSON-ответ обрезался, `auto` уходил в резервный Pollinations. Если модель отвечает `429` или другой ошибкой, `auto` делает одну попытку Pollinations и честно возвращает `provider: Pollinations`; это видно в интерфейсе и ответе API.
+Для reasoning-моделей задан `reasoning.effort=low` и `max_tokens=4096`. Без этого бесплатная модель тратила весь лимит на скрытые рассуждения и возвращала пустой `content`. Каждая попытка ограничена 30 секундами, вся цепочка — 70; gunicorn и nginx допускают 100 секунд. Ошибка, лимит `429`, обрезанный JSON или нарушение протокола переводят к следующей модели. Если вся цепочка не ответила, `auto` делает попытку Pollinations и честно возвращает `provider: Pollinations`; это видно в интерфейсе и ответе API.
 
 Чтобы включить DeepSeek:
 
@@ -151,11 +153,15 @@ ASSISTANT_MODEL=openai
 
 ```bash
 OPENROUTER_API_KEY=<ключ>
-OPENROUTER_MODEL=nvidia/nemotron-3-ultra-550b-a55b:free
+OPENROUTER_MODELS=baidu/ernie-5.5-flash-preview:free,nvidia/nemotron-3.5-lightning:free,nvidia/nemotron-3-ultra-550b-a55b:free,openrouter/free
+OPENROUTER_ATTEMPT_TIMEOUT=30
+OPENROUTER_TOTAL_TIMEOUT=70
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 OPENROUTER_SITE_URL=https://campus.mxd.wtf
 OPENROUTER_APP_NAME=Campus demo
 ```
+
+`OPENROUTER_MODEL` остаётся устаревшей одиночной настройкой: она используется только если `OPENROUTER_MODELS` пуст.
 
 ### OpenCode Zen
 
@@ -199,7 +205,7 @@ curl -sS -b cookies.txt \
   https://campus.mxd.wtf/api/assistant
 ```
 
-Поле `provider` должно быть `OpenRouter`; при лимите бесплатной модели допустим честный `Pollinations`.
+Поле `provider` должно быть `OpenRouter`, а `model` — одной из настроенных моделей; при лимите всей цепочки допустим честный `Pollinations`.
 
 ## Старый резервный адрес
 

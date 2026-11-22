@@ -10,7 +10,7 @@ Group=meow
 WorkingDirectory=/home/meow/campus/backend
 EnvironmentFile=/home/meow/campus/backend/.env
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/home/meow/campus/.venv/bin/gunicorn --workers 3 --threads 2 --bind 127.0.0.1:5000 --timeout 60 --access-logfile - --error-logfile - app:app
+ExecStart=/home/meow/campus/.venv/bin/gunicorn --workers 3 --threads 2 --bind 127.0.0.1:5000 --timeout 100 --access-logfile - --error-logfile - app:app
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=true
