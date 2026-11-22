@@ -62,3 +62,7 @@ ReportLab — BSD, Pillow — HPND (лицензии поставляются с
 ## Шейдеры
 
 Paper Shaders (`@paper-design/shaders-react` 0.0.82 и `@paper-design/shaders`) — Apache-2.0. LICENSE и NOTICE поставляются в npm-пакетах. LiquidMetal применяется к собственному знаку «Кампуса», HalftoneDots — к собственному изображению study-rhythm.svg. React Bits пока не используется.
+
+## Demo profile avatars — Open Peeps
+
+Anna and Maksim portraits in `frontend/public/avatars/` downloaded from DiceBear's Open Peeps API. Original artwork: Pablo Stanley, https://www.openpeeps.com/, CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/). Style and license: https://www.dicebear.com/styles/open-peeps/. These are illustrations of fictional students, served locally without external requests.

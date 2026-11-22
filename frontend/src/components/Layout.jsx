@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { Suspense, useLayoutEffect, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Bell, CalendarDays, FileText, GraduationCap, LayoutDashboard } from "../icons";
@@ -7,7 +7,7 @@ import { useAuth } from "../auth";
 import { AssistantDock } from "./AssistantDock";
 import { Avatar } from "./Avatar";
 import { LogoMark } from "./Logo";
-import { FullscreenLoader } from "./States";
+import { FullscreenLoader, PageSkeleton } from "./States";
 import { AnimatedCount } from "./Motion";
 import { CONTENT_TRANSITION } from "../motion";
 
@@ -17,6 +17,7 @@ const NAV = [
   { to: "/grades", label: "Успеваемость", icon: GraduationCap },
   { to: "/requests", label: "Заявки", icon: FileText },
   { to: "/notifications", label: "Уведомления", icon: Bell },
+  { to: "/social", label: "Социалка", icon: Bell },
 ];
 
 function AppHeader() {
@@ -51,14 +52,12 @@ function AppHeader() {
     <>
       <header className="app-header">
         <div className="app-header-inner">
-          <Link to="/" className="header-brand" aria-label="Кампус, на главную">
-            <LogoMark size={34} /><span>кампус</span>
-          </Link>
+          <div className="header-brand"><LogoMark size={34} /><Link to="/" aria-label="Кампус, на главную">кампус</Link></div>
           <nav ref={tabsRef} className="header-tabs" aria-label="Основная навигация">
             {NAV.map(({ to, label, icon: Icon }) => {
               const active = to === "/" ? pathname === to : pathname === to || pathname.startsWith(`${to}/`);
-              return <Link key={to} to={to} className="header-tab" aria-current={active ? "page" : undefined}>
-                <Icon size={18} /><span>{label}</span>
+              return <Link key={to} to={to} className="header-tab" aria-label={label} aria-current={active ? "page" : undefined}>
+                <Icon size={18} /><span className="nav-label-full">{label}</span><span className="nav-label-short" aria-hidden="true">{to === "/grades" ? "Учёба" : to === "/notifications" ? "Уведы" : to === "/schedule" ? "Пары" : label}</span>
                 {to === "/notifications" && <AnimatePresence initial={false}>
                   {unread > 0 && <motion.span className="header-badge" initial={{ width: 0, opacity: 0 }} animate={{ width: "auto", opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={reduced ? { duration: 0 } : CONTENT_TRANSITION}>
                     <AnimatedCount value={unread > 9 ? "9+" : unread} />
@@ -68,7 +67,7 @@ function AppHeader() {
             })}
           </nav>
           <Link to="/profile" className="header-profile" aria-label="Профиль" aria-current={pathname === "/profile" ? "page" : undefined}>
-            <Avatar user={user} size="sm" />
+            <Avatar user={user} size="sm" eager />
           </Link>
         </div>
       </header>
@@ -83,7 +82,7 @@ function RouteStage() {
   return <motion.div key={pathname} className="route-stage"
     initial={native.current || reduced ? false : { opacity: 0, y: 5 }}
     animate={{ opacity: 1, y: 0 }} transition={reduced ? { duration: 0 } : CONTENT_TRANSITION}
-  ><Outlet /></motion.div>;
+  ><Suspense fallback={<PageSkeleton />}><Outlet /></Suspense></motion.div>;
 }
 
 export default function Layout() {
@@ -92,6 +91,7 @@ export default function Layout() {
   useLayoutEffect(() => {
     // scrollTo can return a Promise; an effect must not return it as cleanup.
     window.scrollTo({ top: 0, behavior: "instant" });
+    document.querySelector(".main-inner")?.scrollTo({ top: 0, behavior: "instant" });
   }, [location.pathname]);
   if (loading) return <FullscreenLoader />;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
@@ -100,6 +100,7 @@ export default function Layout() {
     <a className="skip-link" href="#main-content">Перейти к содержимому</a>
     <AppHeader />
     <main className="main-inner" id="main-content"><RouteStage /></main>
+    <div className="dock-reserve" aria-hidden="true" />
     <AssistantDock />
     <footer className="app-footer"><span>Кампус · демо</span><span>Неофициальный сервис. Все данные вымышлены.</span></footer>
   </div>;

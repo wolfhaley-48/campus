@@ -1,3 +1,4 @@
+import { ReactiveLink } from "../components/ReactiveSurface";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ChevronRight,
@@ -129,7 +130,7 @@ export default function Requests() {
       ) : (
         <div className="request-list">
           {filtered.map((request) => (
-            <Link
+            <ReactiveLink
               to={`/requests/${request.id}`}
               className="request-card"
               data-status={request.status}
@@ -153,7 +154,7 @@ export default function Requests() {
                 className="request-chevron"
                 aria-hidden="true"
               />
-            </Link>
+            </ReactiveLink>
           ))}
         </div>
       )}

@@ -51,7 +51,7 @@ def main():
     client = MongoClient(Config.MONGO_URI, tz_aware=True, serverSelectionTimeoutMS=5000)
     db = client[Config.DB_NAME]
 
-    for name in ["users", "schedule", "grades", "requests", "notifications", "counters", "plan_tasks"]:
+    for name in ["users", "schedule", "grades", "requests", "notifications", "counters", "plan_tasks", "social_posts", "social_messages", "social_reads"]:
         db[name].delete_many({})
 
     anna_id = db.users.insert_one(
@@ -390,6 +390,8 @@ def main():
     db.notifications.insert_many(notifications)
 
     apply_demo_scenarios(db)
+    from social import seed_social_demo
+    seed_social_demo(db)
     print("Демо-данные загружены.")
     print(f"База: {Config.DB_NAME}")
     print(f"Анна:   login=anna   password={PASSWORD}")

@@ -120,13 +120,14 @@ export default function Grades() {
   return (
     <LoadTransition phase="ready"><div className="page grades-page" data-risk={summary.debts > 0 || undefined}>
       <PageHeader title="Успеваемость" />
-      {summary.debts > 0 && <section className="grade-recovery"><b>Долги не исчезнут сами. Разберём по одному.</b><span>Всего несданных дисциплин: {summary.debts}</span><Link className="btn btn-primary" to="/requests?new=1&type=application_retake">Записаться на пересдачу</Link></section>}
+      {summary.debts > 0 && <section className="grade-recovery"><b>Есть хвосты. Закроем по одному.</b><span>Всего несданных дисциплин: {summary.debts}</span><Link className="btn btn-primary" to="/requests?new=1&type=application_retake">Записаться на пересдачу</Link></section>}
       <div className="grades-toolbar">
         <ChoiceGroup label="Семестр" value={semester.number} onChange={setActiveSemester} options={data.semesters.map((item) => ({ key: item.number, label: `${item.number} семестр`, marker: item.number === summary.currentSemester }))} />
 
       </div>
 
-      <ContentSwap value={semester.number}><div className="semester-focus"><div><b>{semester.average ?? "—"}</b><span>Средний балл<br />за выбранный семестр</span></div><p>{semester.creditsEarned} из {semester.credits} зачётных единиц закрыто</p></div><div className="grades-grid">
+      <section className="semester-focus" aria-label="Прогресс обучения"><aside className="average-sticker" aria-label="Средний балл за всё обучение"><b>{summary.overallAverage ?? "—"}</b><span>Средний балл<br/>за всё обучение</span></aside><div className="semester-progress"><span>{semester.number} семестр</span><b>{semester.creditsEarned} из {semester.credits} з.е. закрыто</b><progress value={semester.creditsEarned} max={semester.credits || 1} aria-label="Закрытые зачётные единицы" /></div></section>
+      <ContentSwap value={semester.number}><div className="grades-grid">
         <section className="card grade-card">
           <div className="grade-table-head" aria-hidden="true">
             <span>Дисциплина</span>

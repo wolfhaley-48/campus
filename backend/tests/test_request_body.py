@@ -21,6 +21,27 @@ class RequestBodyTest(unittest.TestCase):
                         self.assertEqual(response.status_code, 400)
                         self.assertEqual(response.json['error'], 'bad_request')
 
+class ScheduleRangeTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from app import create_app
+        cls.local_app = create_app()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.local_app.extensions["mongo_client"].close()
+
+    def test_scroll_can_cross_the_old_eight_week_boundary(self):
+        with self.local_app.test_client() as client:
+            self.assertEqual(client.post('/api/auth/login', json={'login': 'anna', 'password': 'kampus2026'}).status_code, 200)
+            before = client.get('/api/schedule?week=8')
+            after = client.get('/api/schedule?week=9')
+            previous = client.get('/api/schedule?week=-9')
+            self.assertEqual(after.status_code, 200)
+            self.assertEqual(previous.status_code, 200)
+            self.assertNotEqual(before.json['weekStart'], after.json['weekStart'])
+            self.assertNotEqual(previous.json['weekStart'], after.json['weekStart'])
+
 
 if __name__ == '__main__':
     unittest.main()

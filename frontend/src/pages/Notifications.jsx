@@ -1,3 +1,4 @@
+import { ReactiveButton } from "../components/ReactiveSurface";
 import { Link } from "../navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -192,9 +193,10 @@ export default function Notifications() {
                   const due = item.dueDate ? daysUntil(item.dueDate) : null;
                   return (
                     <article key={item.id} className="notification-entry">
-                    <button
+                    <ReactiveButton
                       type="button"
                       className="notification-card"
+                      data-category={item.category}
                       data-overdue={due !== null && due < 0 || undefined}
                       data-unread={!item.isRead ? "true" : undefined}
                       onClick={() => markRead(item)}
@@ -223,7 +225,7 @@ export default function Notifications() {
                           </span>
                         )}
                       </span>
-                    </button>
+                    </ReactiveButton>
                     {item.action && <Link className="notification-action" to={item.action.href}>{item.action.label}</Link>}
                     </article>
                   );

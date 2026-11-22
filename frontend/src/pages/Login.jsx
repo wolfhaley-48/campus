@@ -6,6 +6,7 @@ import { useAppNavigate } from "../navigation";
 
 import { useAuth } from "../auth";
 import { LogoMark } from "../components/Logo";
+import { Avatar } from "../components/Avatar";
 import { FullscreenLoader } from "../components/States";
 import { Spinner } from "../components/Motion";
 import { CONTENT_TRANSITION } from "../motion";
@@ -124,16 +125,7 @@ export default function Login() {
                   key={account.login}
                   onClick={() => fillDemo(account)}
                 >
-                  <span
-                    className="demo-avatar"
-                    style={{ "--hue": account.hue }}
-                    aria-hidden="true"
-                  >
-                    {account.name
-                      .split(" ")
-                      .map((part) => part[0])
-                      .join("")}
-                  </span>
+                  <Avatar user={account} size="sm" className="demo-avatar" />
                   <span className="demo-account-text">
                     <b>{account.name}</b>
                     <small>{account.meta}</small>

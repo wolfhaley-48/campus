@@ -7,5 +7,5 @@ export function BitmapAccent() {
     const gl=canvas.getContext("webgl2",{failIfMajorPerformanceCaveat:true});
     if(gl){gl.getExtension("WEBGL_lose_context")?.loseContext();setSupported(true);}
   },[]);
-  return <span className="bitmap-accent" aria-hidden="true"><img src="/study-rhythm.svg" alt=""/>{supported&&<Suspense fallback={null}><Halftone image="/study-rhythm.svg" colorFront="#354a1b" colorBack="#dcec9b" size={.5} radius={.8} originalColors={false} speed={0} maxPixelCount={70000} style={{width:"100%",height:"100%"}}/></Suspense>}</span>;
+  return <span className="bitmap-accent" aria-hidden="true"><img src="/study-rhythm.svg" alt="" loading="lazy" decoding="async"/>{supported&&<Suspense fallback={null}><Halftone image="/study-rhythm.svg" colorFront="#354a1b" colorBack="#dcec9b" size={.5} radius={.8} originalColors={false} speed={0} maxPixelCount={70000} style={{width:"100%",height:"100%"}}/></Suspense>}</span>;
 }

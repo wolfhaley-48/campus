@@ -76,7 +76,7 @@ export default function Profile() {
       <div className="profile-content">
         <section>
           <div className="card-head">
-            <h2 className="card-title">Обучение и контакты</h2>
+            <h2 className="card-title">Про твою учёбу</h2>
           </div>
 
           <dl className="profile-list">

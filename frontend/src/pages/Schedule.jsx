@@ -8,6 +8,8 @@ import {
   MapPin,
 } from "../icons";
 
+import { Link } from "../navigation";
+import { ScheduleRail } from "../components/ScheduleRail";
 import { ChangeNote } from "../components/ChangeNote";
 import { PageHeader } from "../components/PageHeader";
 import { EmptyState, ErrorState } from "../components/States";
@@ -67,10 +69,10 @@ function LessonCard({ lesson, wide = false }) {
 
 function DayColumn({ day }) {
   return (
-    <section className={`week-day${day.isToday ? " is-today" : ""}`}>
+    <section className={`week-day${day.isToday ? " is-today" : ""}`} data-date={day.date} data-weekday={day.weekday}>
       <header className="week-day-head">
         <span className="week-day-name">{WEEKDAYS[day.weekday - 1]}</span>
-        <span className="week-day-date">{Number(day.date.slice(8, 10))}</span>
+        <span className="week-day-date">{formatDayMonth(day.date)}</span>
         {day.isToday && <span className="week-today-mark">сегодня</span>}
       </header>
       <div className="week-day-body">
@@ -112,7 +114,7 @@ export default function Schedule() {
   const changeWeek = (next) => {
     setDirection(Math.sign(next - offset));
     setWeekday(activeDay.weekday);
-    setOffset(Math.max(-8, Math.min(8, next)));
+    setOffset(Math.max(-5200, Math.min(5200, next)));
   };
 
   return (
@@ -125,7 +127,7 @@ export default function Schedule() {
               type="button"
               className="icon-btn"
               onClick={() => changeWeek(offset - 1)}
-              disabled={offset <= -8}
+              disabled={offset <= -5200}
               aria-label="Предыдущая неделя"
             >
               <ChevronLeft size={18} strokeWidth={2} aria-hidden="true" />
@@ -137,7 +139,7 @@ export default function Schedule() {
               type="button"
               className="icon-btn"
               onClick={() => changeWeek(offset + 1)}
-              disabled={offset >= 8}
+              disabled={offset >= 5200}
               aria-label="Следующая неделя"
             >
               <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
@@ -182,11 +184,7 @@ export default function Schedule() {
       </motion.div>
 
       <ContentSwap value={`${view}-${data.weekStart}-${view === "day" ? activeDay.date : ""}`} direction={direction}>
-      {view === "week" && <div className="week-board panel-week-board" role="region" aria-label="Расписание на неделю" tabIndex={0}>
-        {data.days.map((day) => (
-          <DayColumn key={day.date} day={day} />
-        ))}
-      </div>}
+      {view === "week" && <ScheduleRail key={data.weekStart} initialData={data} offset={offset} renderDay={day => <DayColumn key={day.date} day={day} />} />}
 
       {view === "day" && <div className="day-focus panel-day-focus">
         <div className="day-focus-head">
@@ -202,6 +200,7 @@ export default function Schedule() {
             <EmptyState
               icon={CalendarOff}
               title="Занятий нет"
+              action={<Link className="btn btn-primary" to="/plan">Найти время для своих дел</Link>}
             />
           </div>
         ) : (

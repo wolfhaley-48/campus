@@ -23,7 +23,7 @@ test("rapid tab changes cancel stale transitions without replacing the header", 
   });
   await expect(page).toHaveURL(/\/grades$/);
   await expect(page.getByRole("heading", { name: "Успеваемость", exact: true })).toBeVisible();
-  await page.evaluate(async () => { await Promise.allSettled(document.getAnimations().map((animation) => animation.finished)); });
+  await page.evaluate(async () => { await Promise.allSettled(document.getAnimations().filter((animation) => animation.effect.getTiming().iterations !== Infinity).map((animation) => animation.finished)); });
   expect(await page.evaluate(() => document.querySelector(".app-header") === window.__header)).toBe(true);
   await expect(page.locator('.header-tab[aria-current="page"]')).toHaveAttribute("href", "/grades");
   await page.goBack();
@@ -67,14 +67,14 @@ test("filtered content changes height without a collapse or final snap", async (
   const data = await (await page.request.get("/api/requests")).json();
   await page.goto("/requests");
   const swap = page.locator(".content-swap").first();
-  await expect(page.locator(".request-card")).toHaveCount(data.requests.length);
+  await expect(page.locator(".request-card-target")).toHaveCount(data.requests.length);
   const before = await height(swap);
   await page.getByRole("group", { name: "Фильтр заявок" }).getByRole("button", { name: /Готовые/ }).click();
   await twoFrames(page);
   const middle = await height(swap);
   expect(middle).toBeGreaterThan(0);
   expect(middle).toBeLessThan(before);
-  await expect(page.locator(".request-card")).toHaveCount(data.requests.filter((item) => item.status === "ready").length);
+  await expect(page.locator(".request-card-target")).toHaveCount(data.requests.filter((item) => item.status === "ready").length);
   await expect.poll(async () => Math.abs(await height(swap) - await height(swap.locator(".swap-panel")))).toBeLessThan(0.05);
   const resting = await height(swap);
   await twoFrames(page);
@@ -177,4 +177,31 @@ test("reduced motion also disables local selection and disclosure movement", asy
   const first = await height(body);
   await twoFrames(page);
   expect(await height(body)).toBe(first);
+});
+
+
+test("solid cube rotates behind one fixed initial, pauses and respects reduced motion", async ({ page }) => {
+  await page.goto("/");
+  const cube = page.locator(".brand-cube");
+  const initial = page.locator(".brand-initial");
+  await expect(cube).toBeVisible();
+  await expect(initial).toHaveCount(1);
+  const image = () => cube.evaluate(el => el.toDataURL());
+  const resolution = await cube.evaluate(el => el.width / el.getBoundingClientRect().width);
+  expect(resolution).toBeGreaterThanOrEqual(3);
+  const start = await image();
+  await expect.poll(image).not.toBe(start);
+  await expect(initial).toHaveCSS("transform", "none");
+  const stop = page.getByRole("button", { name: "Остановить вращение логотипа", exact: true });
+  await stop.focus(); await page.keyboard.press("Enter");
+  await expect(page.getByRole("button", { name: "Включить вращение логотипа", exact: true })).toBeFocused();
+  await twoFrames(page);
+  const paused = await image(); await page.waitForTimeout(150);
+  expect(await image()).toBe(paused);
+  await page.keyboard.press("Enter"); await expect.poll(image).not.toBe(paused);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(page.getByRole("button", {name:"Логотип Кампуса, движение отключено",exact:true})).toBeDisabled();
+  await twoFrames(page);
+  const reduced = await image(); await page.waitForTimeout(150);
+  expect(await image()).toBe(reduced);
 });

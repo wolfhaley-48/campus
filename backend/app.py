@@ -4,6 +4,7 @@ from flask import Flask, g, jsonify, request, send_from_directory
 from werkzeug.security import safe_join
 
 from api import bp
+from social import social
 from auth import load_user
 from config import Config
 from db import close_db, init_db
@@ -27,6 +28,7 @@ def create_app(config_class=Config):
     init_db(app)
     app.teardown_appcontext(close_db)
     app.register_blueprint(bp)
+    app.register_blueprint(social)
 
     @app.before_request
     def before_request():

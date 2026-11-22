@@ -53,7 +53,7 @@ test("responsive navigation, local assets and SPA navigation on every screen", a
   const nav = page.getByRole("navigation", { name: "Основная навигация" });
   for (const [label, title] of [
     ["Расписание", "Расписание"], ["Успеваемость", "Успеваемость"],
-    ["Заявки", "Заявки и справки"], ["Уведомления", "Уведомления"], ["Главная", /что в планах/],
+    ["Заявки", "Заявки и справки"], ["Уведомления", "Уведомления"], ["Социалка", "Социалка"], ["Главная", /что в планах/],
   ]) {
     await nav.getByRole("link", { name: label }).click();
     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
@@ -65,7 +65,7 @@ test("responsive navigation, local assets and SPA navigation on every screen", a
     const r = node.getBoundingClientRect();
     return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight;
   }));
-  expect(links).toEqual([true, true, true, true, true]);
+  expect(links).toEqual([true, true, true, true, true, true]);
   await page.getByRole("link", { name: "Профиль", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Профиль", exact: true })).toBeVisible();
   await fits(page);
@@ -80,8 +80,9 @@ test("schedule: day, week, changes and week navigation", async ({ page }) => {
   const sunday = page.locator(".day-chip").last();
   await sunday.click();
   await expect(page.getByText("Занятий нет", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", {name:"Найти время для своих дел",exact:true})).toHaveAttribute("href","/plan");
   await page.getByRole("button", { name: "Вся неделя", exact: true }).click();
-  await expect(page.locator(".week-day")).toHaveCount(7);
+  await expect.poll(() => page.locator(".week-day").count()).toBeGreaterThanOrEqual(7);
   await expect(page.locator(".change-note").first()).toBeVisible();
   await fits(page);
   const currentRange = await page.locator(".week-nav-label").textContent();
@@ -191,11 +192,11 @@ test("notifications: category filters, mark one and mark all", async ({ page }) 
     return route.fulfill({ json: data });
   });
   await page.goto("/notifications");
-  await expect(page.locator(".notification-card")).toHaveCount(data.notifications.length);
-  await page.locator(".notification-card").first().click();
-  await expect(page.locator('.notification-card[data-unread="true"]')).toHaveCount(data.notifications.length - 1);
+  await expect(page.locator(".notification-card-target")).toHaveCount(data.notifications.length);
+  await page.locator(".notification-card-target").first().click();
+  await expect(page.locator('.notification-card-target[data-unread="true"]')).toHaveCount(data.notifications.length - 1);
   await page.getByRole("group", { name: "Категории уведомлений" }).getByRole("button", { name: /Деканат/ }).click();
-  await expect(page.locator(".notification-card")).toHaveCount(data.notifications.filter((item) => item.category === "dean").length);
+  await expect(page.locator(".notification-card-target")).toHaveCount(data.notifications.filter((item) => item.category === "dean").length);
   await page.getByRole("button", { name: "Прочитать все" }).click();
   await expect(page.getByRole("button", { name: "Прочитать все" })).toBeDisabled();
   await expect(page.locator(".header-badge")).toHaveCount(0);

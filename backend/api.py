@@ -121,7 +121,7 @@ def schedule():
         offset = int(request.args.get("week", 0))
     except (TypeError, ValueError):
         offset = 0
-    offset = max(-8, min(8, offset))
+    offset = max(-5200, min(5200, offset))
     return jsonify(schedule_payload(get_db(), g.user, offset))
 
 

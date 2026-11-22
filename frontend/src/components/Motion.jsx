@@ -28,7 +28,7 @@ export function ContentSwap({ value, children, direction = 0, className = "" }) 
   useLayoutEffect(() => {
     const element = content.current;
     if (!element) return;
-    const measure = () => setHeight(element.getBoundingClientRect().height);
+    const measure = () => setHeight(Number.parseFloat(getComputedStyle(element).height));
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(element);
@@ -93,6 +93,7 @@ export function ChoiceGroup({ options, value, onChange, label, className = "segm
       key={option.key}
       type="button"
       className={buttonClassName}
+      data-key={option.key}
       data-active={value === option.key ? "true" : undefined}
       data-today={option.today || undefined}
       aria-pressed={value === option.key}
